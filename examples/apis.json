@@ -1,0 +1,32 @@
+{
+  "model": "anthropic/claude-sonnet-5-5",
+  "instructions": "You are Kli, an assistant that runs in the terminal. Be direct and concise. Always reply in the language the user writes in. If you don't know something, say so.",
+  "locations": {
+    "anthropic": { "type": "anthropic", "model": "claude-sonnet-5-5" },
+    "gemini": {
+      "type": "api",
+      "url": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "apiKeyEnv": "GEMINI_API_KEY",
+      "model": "gemini-3.5-flash"
+    },
+    "openrouter": { "type": "api", "url": "https://openrouter.ai/api/v1", "apiKeyEnv": "OPENROUTER_API_KEY" }
+  },
+  "stacks": {
+    "compare": {
+      "description": "Claude and Gemini answer the same prompt, side by side",
+      "nodes": {
+        "claude": { "model": "anthropic/claude-sonnet-5-5" },
+        "gemini": { "model": "gemini/gemini-3.5-flash" }
+      }
+    },
+    "review": {
+      "description": "Claude and Gemini answer, Claude joins the answers, and a smaller Claude judges the result against the request",
+      "nodes": {
+        "claude": { "model": "anthropic/claude-sonnet-5-5" },
+        "gemini": { "model": "gemini/gemini-3.5-flash" },
+        "join": { "model": "anthropic/claude-sonnet-5-5", "role": "aggregate", "from": ["claude", "gemini"] },
+        "judge": { "model": "anthropic/claude-haiku-5-5", "role": "verify", "from": ["join", "claude", "gemini"] }
+      }
+    }
+  }
+}

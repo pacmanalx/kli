@@ -1,0 +1,8 @@
+node_modules/
+dist/
+# sobras de bun build --compile que não terminou
+.*.bun-build
+# permissões e instruções locais do Claude Code, de cada pessoa
+.claude/settings.local.json
+CLAUDE.local.md
+.DS_Store

@@ -1,0 +1,38 @@
+{
+  "model": "local/ollama/qwen3:4b",
+  "instructions": "You are Kli, an assistant that runs in the terminal. Be direct and concise. Always reply in the language the user writes in. If you don't know something, say so.",
+  "locations": {
+    "local": {
+      "type": "machine",
+      "providers": {
+        "ollama": { "type": "server", "port": 11434, "model": "qwen3:4b" }
+      }
+    }
+  },
+  "stacks": {
+    "compare": {
+      "description": "the same prompt to two local models, their answers side by side",
+      "nodes": {
+        "qwen": { "model": "local/ollama/qwen3:4b" },
+        "gemma": { "model": "local/ollama/gemma3:4b" }
+      }
+    },
+    "review": {
+      "description": "two local models answer, one joins the answers, and a verifier judges the result against the request",
+      "nodes": {
+        "qwen": { "model": "local/ollama/qwen3:4b" },
+        "gemma": { "model": "local/ollama/gemma3:4b" },
+        "join": { "model": "local/ollama/qwen3:4b", "role": "aggregate", "from": ["qwen", "gemma"] },
+        "judge": { "model": "local/ollama/qwen3:4b", "role": "verify", "from": ["join", "qwen", "gemma"] }
+      }
+    },
+    "choose": {
+      "description": "two local models answer; you choose one on the full screen, or a model chooses when no one can",
+      "nodes": {
+        "qwen": { "model": "local/ollama/qwen3:4b", "tools": "none" },
+        "gemma": { "model": "local/ollama/gemma3:4b", "tools": "none" },
+        "choice": { "model": "local/ollama/qwen3:4b", "role": "choose", "from": ["qwen", "gemma"], "by": ["person", "model"] }
+      }
+    }
+  }
+}

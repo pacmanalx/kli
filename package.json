@@ -1,0 +1,30 @@
+{
+  "name": "kli",
+  "version": "0.1.0",
+  "description": "Kli (כלי): one terminal for every inference source you have (local servers, other machines over SSH, APIs and coding CLIs), and model stacks that answer as one",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pacmanalx/kli"
+  },
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/cli/main.ts",
+    "build": "bun build src/cli/main.ts --compile --define 'process.env.NODE_ENV=\"production\"' --outfile dist/kli",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/cli/stackbuilder/page",
+    "release": "bun run scripts/release.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.12.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  }
+}

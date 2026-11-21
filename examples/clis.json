@@ -1,0 +1,50 @@
+{
+  "model": "local/claude/sonnet",
+  "instructions": "You are Kli, an assistant that runs in the terminal. Be direct and concise. Always reply in the language the user writes in. If you don't know something, say so.",
+  "locations": {
+    "local": {
+      "type": "machine",
+      "providers": {
+        "claude": { "type": "cli", "command": "claude", "model": "sonnet" },
+        "agy": { "type": "cli", "command": "agy" },
+        "opencode": { "type": "cli", "command": "opencode" }
+      }
+    }
+  },
+  "stacks": {
+    "compare": {
+      "description": "Claude and Gemini answer the same prompt, reading the folder; their answers side by side",
+      "nodes": {
+        "claude": { "model": "local/claude/sonnet" },
+        "gemini": { "model": "local/agy" }
+      }
+    },
+    "plan": {
+      "description": "Gemini writes a plan reading the folder; Claude checks it, fixes it and fills it in; a third model judges both",
+      "purpose": "planning: action plans, designs, roadmaps, breaking a task into steps before doing it",
+      "nodes": {
+        "gemini": {
+          "model": "local/agy",
+          "output": true,
+          "instructions": "Write an action plan for the request. First read in the folder what you need to understand what exists today. The plan has: the goal; what exists today, with the files; the steps in order; the risks; and how to check it. Do not implement anything."
+        },
+        "claude": {
+          "model": "local/claude/sonnet",
+          "from": ["gemini"],
+          "output": true,
+          "instructions": "You get a plan for the request. Check in the folder what it claims, fix what is wrong and add what is missing. Deliver the whole plan and, at the end, list what you changed. Do not implement anything."
+        },
+        "judge": { "model": "local/claude/opus", "role": "verify", "from": ["gemini", "claude"] }
+      }
+    },
+    "agents": {
+      "description": "two agents change the code, each in its own copy of the folder; a judge compares them and you apply the one you choose",
+      "purpose": "implementing, fixing, refactoring or testing the project's code",
+      "nodes": {
+        "claude": { "model": "local/claude/sonnet", "tools": "write" },
+        "gemini": { "model": "local/agy", "tools": "write" },
+        "judge": { "model": "local/claude/opus", "role": "verify", "from": ["claude", "gemini"] }
+      }
+    }
+  }
+}

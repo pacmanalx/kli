@@ -1,0 +1,179 @@
+{
+  "model": "laptop/claude/sonnet",
+  "fallback": [
+    "laptop/ollama/qwen3:4b"
+  ],
+  "triage": {
+    "model": "gpubox/llama.cpp/qwen2.5-7b"
+  },
+  "instructions": "You are Kli, an assistant that runs in the terminal. Be direct and concise. Always reply in the language the user writes in. If you don't know something, say so.",
+  "temperature": 0.3,
+  "locations": {
+    "laptop": {
+      "type": "machine",
+      "providers": {
+        "ollama": {
+          "type": "server",
+          "port": 11434,
+          "model": "qwen3:4b"
+        },
+        "claude": {
+          "type": "cli",
+          "command": "claude",
+          "model": "sonnet"
+        },
+        "claude-agent": {
+          "type": "cli",
+          "command": "claude",
+          "model": "sonnet",
+          "cwd": ".",
+          "args": [
+            "-p",
+            "--output-format",
+            "stream-json",
+            "--verbose",
+            "--include-partial-messages",
+            "--tools",
+            "Read",
+            "Grep",
+            "Glob",
+            "--strict-mcp-config",
+            "--setting-sources",
+            "project",
+            "--no-session-persistence",
+            "--model",
+            "{model}"
+          ],
+          "format": "claude"
+        },
+        "agy": {
+          "type": "cli",
+          "command": "agy"
+        },
+        "opencode": {
+          "type": "cli",
+          "command": "opencode"
+        },
+        "kimi": {
+          "type": "cli",
+          "command": "kimi"
+        }
+      }
+    },
+    "gpubox": {
+      "type": "machine",
+      "ssh": "admin@192.168.10.230",
+      "providers": {
+        "llama.cpp": {
+          "type": "server",
+          "port": 8080,
+          "tunnel": true,
+          "model": "qwen2.5-7b"
+        },
+        "claude": {
+          "type": "cli",
+          "command": "claude",
+          "model": "haiku"
+        }
+      }
+    },
+    "lab": {
+      "type": "machine",
+      "ssh": "admin@192.168.10.231",
+      "jump": "gpubox",
+      "providers": {
+        "ollama": {
+          "type": "server",
+          "port": 11434,
+          "tunnel": true,
+          "model": "gemma3:12b"
+        }
+      }
+    },
+    "vertex": {
+      "type": "google",
+      "project": "my-gcp-project",
+      "region": "global",
+      "model": "gemini-3.5-flash-lite"
+    },
+    "anthropic": {
+      "type": "anthropic",
+      "model": "claude-sonnet-5-5"
+    },
+    "openrouter": {
+      "type": "api",
+      "url": "https://openrouter.ai/api/v1",
+      "apiKeyEnv": "OPENROUTER_API_KEY"
+    }
+  },
+  "stacks": {
+    "compare": {
+      "description": "the same prompt to two models, two answers side by side",
+      "nodes": {
+        "lab": {
+          "model": "lab/ollama/gemma3:12b"
+        },
+        "gpubox": {
+          "model": "gpubox/llama.cpp/qwen2.5-7b"
+        }
+      }
+    },
+    "review": {
+      "description": "two models on other machines answer, Gemini joins them, and a verifier judges the result and the branches",
+      "purpose": "explaining, comparing or reviewing something in depth, where a second opinion and a judge help",
+      "nodes": {
+        "a": {
+          "model": "lab/ollama/gemma3:12b"
+        },
+        "b": {
+          "model": "gpubox/llama.cpp/qwen2.5-7b"
+        },
+        "join": {
+          "model": "vertex/google/gemini-3.5-flash",
+          "role": "aggregate",
+          "from": [
+            "a",
+            "b"
+          ]
+        },
+        "judge": {
+          "model": "vertex/google/gemini-3.5-flash",
+          "role": "verify",
+          "from": [
+            "join",
+            "a",
+            "b"
+          ]
+        }
+      }
+    },
+    "choose": {
+      "description": "two local models answer; the person chooses on the full screen, or Gemini when no one does",
+      "nodes": {
+        "a": {
+          "model": "lab/ollama/gemma3:12b",
+          "tools": "none"
+        },
+        "b": {
+          "model": "gpubox/llama.cpp/qwen2.5-7b",
+          "tools": "none"
+        },
+        "choice": {
+          "model": "vertex/google/gemini-3.5-flash",
+          "role": "choose",
+          "from": [
+            "a",
+            "b"
+          ],
+          "by": [
+            "person",
+            "model"
+          ]
+        }
+      }
+    }
+  },
+  "sessions": {
+    "content": true
+  }
+}

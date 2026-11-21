@@ -1,0 +1,2458 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kli (כלי) — todas as suas fontes de inferência num terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #080a0f;
+      --bg-card: #0f131c;
+      --bg-card-hover: #141a27;
+      --border-color: #1e2638;
+      --border-glow: #00ff9d33;
+      --accent-green: #00ff9d;
+      --accent-cyan: #06b6d4;
+      --accent-clay: #e07a5f;
+      --accent-clay-glow: #e07a5f55;
+      --accent-gold: #f59e0b;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(0, 255, 157, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 85% 65%, rgba(6, 182, 212, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 50% 90%, rgba(224, 122, 95, 0.04) 0%, transparent 50%),
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+    }
+
+    /* Header / Nav */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      background: rgba(8, 10, 15, 0.85);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #1e2638, #0f131c);
+      border: 1px solid var(--accent-green);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--accent-green);
+      box-shadow: 0 0 15px rgba(0, 255, 157, 0.2);
+    }
+
+    .brand-title {
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+    }
+
+    .brand-title span.hebrew {
+      font-family: 'Times New Roman', serif;
+      font-size: 1rem;
+      color: var(--accent-clay);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent-green);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid transparent;
+      font-family: var(--font-sans);
+    }
+
+    .btn-primary {
+      background: var(--accent-green);
+      color: #05140e;
+      box-shadow: 0 0 20px rgba(0, 255, 157, 0.35);
+    }
+
+    .btn-primary:hover {
+      background: #1affab;
+      transform: translateY(-2px);
+      box-shadow: 0 0 28px rgba(0, 255, 157, 0.55);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--text-muted);
+      transform: translateY(-2px);
+    }
+
+    /* Hero Section */
+    .hero {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 5rem 1.5rem 3rem;
+      text-align: center;
+    }
+
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.35rem 1rem;
+      background: rgba(0, 255, 157, 0.08);
+      border: 1px solid rgba(0, 255, 157, 0.25);
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+      color: var(--accent-green);
+      margin-bottom: 2rem;
+    }
+
+    .pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+      animation: pulseDot 2s infinite;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .hero h1 {
+      font-size: 4rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero h1 .highlight-text {
+      background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p.lead {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 760px;
+      margin: 0 auto 2.5rem;
+      font-weight: 400;
+    }
+
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 4rem;
+      flex-wrap: wrap;
+    }
+
+    /* Terminal Simulator */
+    .terminal-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #0b0e14;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 35px rgba(0, 255, 157, 0.08);
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .terminal-header {
+      background: #111622;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .terminal-dots {
+      display: flex;
+      gap: 0.45rem;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .dot.red { background: #ff5f56; }
+    .dot.yellow { background: #ffbd2e; }
+    .dot.green { background: #27c93f; }
+
+    .terminal-title {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .terminal-tabs {
+      display: flex;
+      background: #0d1017;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.25rem 0.5rem 0;
+      gap: 0.25rem;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      padding: 0.5rem 1rem;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .tab-btn.active {
+      color: var(--accent-green);
+      background: #0b0e14;
+      border-top: 2px solid var(--accent-green);
+      font-weight: 600;
+    }
+
+    .terminal-body {
+      padding: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      min-height: 380px;
+      color: #cbd5e1;
+      position: relative;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Terminal Styling Elements */
+    .t-prompt {
+      color: var(--accent-green);
+    }
+
+    .t-cmd {
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .t-comment {
+      color: var(--text-dim);
+    }
+
+    .t-cyan { color: var(--accent-cyan); }
+    .t-amber { color: var(--accent-gold); }
+    .t-clay { color: var(--accent-clay); }
+    .t-dim { color: var(--text-dim); }
+    .t-bold { font-weight: 700; color: #ffffff; }
+
+    /* Mascot Box in Terminal */
+    .golem-display {
+      display: flex;
+      gap: 2rem;
+      background: rgba(15, 19, 28, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-top: 1rem;
+      align-items: center;
+    }
+
+    .golem-visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .golem-img-active {
+      width: 140px;
+      height: auto;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 0 16px rgba(255, 214, 90, 0.45));
+    }
+
+    .golem-info h4 {
+      font-size: 1.05rem;
+      margin-bottom: 0.25rem;
+      color: var(--text-main);
+    }
+
+    .golem-info p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Grid of Pillars / Features */
+    .section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 6rem 1.5rem;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+
+    .section-tag {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+      display: inline-block;
+    }
+
+    .section-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+    }
+
+    .section-subtitle {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .feature-card:hover {
+      border-color: rgba(0, 255, 157, 0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 255, 157, 0.05);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 1.25rem;
+      color: var(--accent-green);
+    }
+
+    .feature-card h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: var(--text-main);
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+
+    /* Hierarchy / Routing Section */
+    .routing-section {
+      background: linear-gradient(180deg, transparent, rgba(15, 19, 28, 0.7) 40%, transparent);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .routing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 900px) {
+      .routing-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero h1 {
+        font-size: 2.8rem;
+      }
+    }
+
+    .tier-box {
+      background: #0d111a;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.75rem;
+      position: relative;
+    }
+
+    .tier-box.primary-tier {
+      border-color: rgba(0, 255, 157, 0.4);
+      box-shadow: 0 0 25px rgba(0, 255, 157, 0.08);
+    }
+
+    .tier-label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
+
+    .tier-local .tier-label {
+      background: rgba(0, 255, 157, 0.15);
+      color: var(--accent-green);
+    }
+
+    .tier-tunnel .tier-label {
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--accent-cyan);
+    }
+
+    .tier-cloud .tier-label {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent-gold);
+    }
+
+    .tier-box h4 {
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .tier-box p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+    }
+
+    .tier-list {
+      list-style: none;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: #94a3b8;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .tier-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tier-list li::before {
+      content: "›";
+      color: var(--accent-green);
+      font-weight: bold;
+    }
+
+    /* Interactive Mascot Visualizer */
+    .mascot-interactive {
+      background: #0d111a;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 2.5rem;
+      margin-top: 3rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .mascot-controller {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .mascot-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mascot-btn:hover, .mascot-btn.active {
+      background: var(--accent-clay);
+      color: #0b0e14;
+      font-weight: 600;
+      border-color: var(--accent-clay);
+      box-shadow: 0 0 15px var(--accent-clay-glow);
+    }
+
+    .interactive-golem-frame {
+      background: #07090e;
+      border: 1px solid rgba(224, 122, 95, 0.3);
+      border-radius: 12px;
+      padding: 2.5rem 3rem;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 0 25px rgba(224, 122, 95, 0.12);
+      position: relative;
+    }
+
+    #golem-interactive-img {
+      width: 280px;
+      max-width: 90%;
+      height: auto;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 0 22px rgba(255, 214, 90, 0.45));
+      transition: transform 0.15s ease, filter 0.25s ease;
+    }
+
+    .golem-state-desc {
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      max-width: 580px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* Quickstart / CLI snippet */
+    .quickstart-box {
+      background: #090c12;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.75rem;
+      max-width: 800px;
+      margin: 2.5rem auto 0;
+      position: relative;
+    }
+
+    .code-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .code-row:last-child {
+      border-bottom: none;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-dim);
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      color: var(--accent-green);
+      border-color: var(--accent-green);
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 3.5rem 1.5rem;
+      background: #06080c;
+      color: var(--text-dim);
+      font-size: 0.88rem;
+    }
+
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    .footer-lore {
+      max-width: 500px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    .footer-lore span.hebrew {
+      color: var(--accent-clay);
+      font-family: 'Times New Roman', serif;
+    }
+
+    /* Terminal lines: each .ln keeps its spaces, like a terminal row */
+    .t-green { color: var(--accent-green); }
+    .t-red { color: #ef4444; }
+    .t-strong { font-weight: 700; }
+
+    .terminal-body .tab-content {
+      overflow-x: auto;
+    }
+
+    .ln {
+      white-space: pre;
+      min-height: 1.6em;
+    }
+
+    .tpre {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.6;
+      white-space: pre;
+      margin: 0;
+      color: #cbd5e1;
+    }
+
+    .tui-rule {
+      border-top: 1px solid var(--border-color);
+      margin: 0.5rem 0;
+    }
+
+    .tui-panel {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      padding: 0.25rem 0 0.25rem 1ch;
+    }
+
+    .tui-panel img {
+      height: 5.2em;
+      width: auto;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 0 10px rgba(255, 214, 90, 0.35));
+    }
+
+    .caret {
+      color: var(--accent-clay);
+      animation: pulseDot 1s infinite;
+    }
+
+    .code-panel {
+      background: #090c12;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    .panel-caption {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .tool-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .tool-chip {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent-green);
+      background: rgba(0, 255, 157, 0.05);
+      border: 1px solid rgba(0, 255, 157, 0.25);
+      border-radius: 6px;
+      padding: 0.3rem 0.75rem;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+      margin-bottom: 2rem;
+    }
+
+    .stack-screen {
+      margin-bottom: 2rem;
+    }
+
+    .feature-card code,
+    .tier-box code,
+    .section-subtitle code {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.05rem 0.3rem;
+      border-radius: 4px;
+    }
+
+    .tier-box .tier-list code {
+      background: none;
+      padding: 0;
+    }
+
+    .section-subtitle code,
+    .feature-card code {
+      white-space: nowrap;
+    }
+
+    .code-row > div {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .code-row .copy-btn {
+      flex-shrink: 0;
+      margin-left: 0.75rem;
+    }
+
+    .copy-btn.copied {
+      color: var(--accent-green);
+      border-color: var(--accent-green);
+    }
+
+    .features-grid {
+      grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+    }
+
+    .features-grid + .features-grid {
+      margin-top: 1.5rem;
+    }
+
+    .shot {
+      max-width: 1100px;
+      margin: 0 auto 2rem;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #161514;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .shot img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .shot figcaption {
+      font-size: 0.88rem;
+      line-height: 1.55;
+      color: var(--text-muted);
+      padding: 0.85rem 1.1rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .features-grid.four {
+      grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+    }
+
+    .features-grid.five {
+      grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
+    }
+
+    .plan-diagram {
+      max-width: 1150px;
+      margin: 0 auto 0.75rem;
+      background: #090c12;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem;
+      overflow-x: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    .plan-diagram svg {
+      display: block;
+      width: 100%;
+      min-width: 860px;
+      height: auto;
+    }
+
+    .plan-diagram .box { fill: var(--bg-card); stroke: var(--border-color); stroke-width: 1.5; }
+    .plan-diagram .ground .box { fill: rgba(6, 182, 212, 0.08); stroke: var(--accent-cyan); }
+    .plan-diagram .judge .box { stroke-dasharray: 5 4; }
+    .plan-diagram .pill { fill: var(--text-main); }
+    .plan-diagram .pill-text { fill: var(--bg-dark); font: 600 13px var(--font-sans); }
+    .plan-diagram .name { fill: var(--text-main); font: 600 14px var(--font-sans); }
+    .plan-diagram .ground .name { fill: var(--accent-cyan); }
+    .plan-diagram .sub { fill: var(--text-dim); font: 11px var(--font-mono); }
+    .plan-diagram .tag { fill: var(--accent-cyan); font: 10.5px var(--font-mono); }
+    .plan-diagram .edge { fill: none; stroke: var(--text-dim); stroke-width: 1.5; }
+
+    .plan-legend {
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      margin: 0 auto 2.5rem;
+      max-width: 900px;
+    }
+
+    .roadmap {
+      list-style: none;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 0 0 1.5rem;
+      border-left: 2px solid var(--border-color);
+    }
+
+    .roadmap li {
+      position: relative;
+      padding-bottom: 1.5rem;
+    }
+
+    .roadmap li::before {
+      content: "";
+      position: absolute;
+      left: calc(-1.5rem - 8px);
+      top: 0.35rem;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--bg-dark);
+      border: 2px solid var(--accent-cyan);
+    }
+
+    .roadmap h4 {
+      margin: 0 0 0.35rem;
+      color: var(--text-main);
+      font-size: 1.05rem;
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .roadmap p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.93rem;
+      line-height: 1.6;
+    }
+
+    .plan-legend code {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.05rem 0.3rem;
+      border-radius: 4px;
+    }
+
+    .roadmap code {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.05rem 0.3rem;
+      border-radius: 4px;
+    }
+
+    .status {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 0.1rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid;
+    }
+
+    .status.next { color: var(--accent-green); border-color: rgba(0, 255, 157, 0.4); }
+    .status.designed { color: var(--accent-cyan); border-color: rgba(6, 182, 212, 0.45); }
+    .status.open { color: var(--accent-gold); border-color: rgba(245, 158, 11, 0.45); }
+    .status.done { color: var(--text-muted); border-color: var(--border-color); }
+
+    .feature-card .gap {
+      color: var(--text-dim);
+      margin-top: 0.6rem;
+    }
+
+    .feature-card .who strong,
+    .feature-card .gap strong {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .research-note {
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      max-width: 820px;
+      margin: 2rem auto 0;
+      line-height: 1.6;
+    }
+
+    .sub-title {
+      text-align: center;
+      font-size: 1.3rem;
+      color: var(--text-main);
+      margin: 2.5rem 0 1.25rem;
+    }
+
+    @media (max-width: 900px) {
+      .split {
+        grid-template-columns: 1fr;
+      }
+      .nav-links {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav>
+    <a href="#" class="brand">
+      <div class="brand-logo">כ</div>
+      <div class="brand-title">
+        kli <span class="hebrew">(כלי)</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#ferramentas">Ferramentas</a></li>
+      <li><a href="#fontes">Fontes</a></li>
+      <li><a href="#stacks">Stacks</a></li>
+      <li><a href="#programar">Programar</a></li>
+      <li><a href="#stackbuilder">Builder</a></li>
+      <li><a href="#plano">Plano</a></li>
+      <li><a href="#mascote">O Golem</a></li>
+      <li><a href="#quickstart">Como Usar</a></li>
+    </ul>
+    <div style="display: flex; gap: 0.75rem;">
+      <a href="#quickstart" class="btn btn-secondary">Docs & Specs</a>
+      <a href="#terminal" class="btn btn-primary">Testar no Terminal</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="pill-badge">
+      <span class="pill-dot"></span>
+      <span>v0.1.0 • Bun • Um binário, sem SDK</span>
+    </div>
+    <h1>
+      <span class="gradient-text">O vaso que conduz a luz da</span><br>
+      <span class="highlight-text">Inteligência Artificial</span>
+    </h1>
+    <p class="lead">
+      <strong>Kli</strong> é um harness de terminal em que você registra todas as suas fontes de inferência: servidores locais, outras máquinas por SSH, APIs e outros CLIs. Ele trabalha na sua pasta com as ferramentas do Claude Code, e uma <em>model stack</em> põe vários modelos para responder como um só, montada no navegador pelo <code>/stackbuilder</code>.
+    </p>
+    <div class="hero-actions">
+      <a href="#quickstart" class="btn btn-primary" style="font-size: 1rem; padding: 0.8rem 1.8rem;">
+        ⚡ Começar Agora com Bun
+      </a>
+      <button class="btn btn-secondary" onclick="runSimulatedCli()" style="font-size: 1rem; padding: 0.8rem 1.8rem;">
+        ▶ Rodar Demonstração
+      </button>
+    </div>
+
+    <!-- Terminal Simulator -->
+    <div class="terminal-container" id="terminal">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <div class="dot red"></div>
+          <div class="dot yellow"></div>
+          <div class="dot green"></div>
+        </div>
+        <div class="terminal-title">
+          <span>kli — ~/projeto</span>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--accent-green); font-family: var(--font-mono);">
+          ● emet
+        </div>
+      </div>
+
+      <div class="terminal-tabs" role="tablist">
+        <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-0" onclick="switchTab(0)">1. Sessão</button>
+        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-1" onclick="switchTab(1)">2. Pipes e scripts</button>
+        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-2" onclick="switchTab(2)">3. Fontes (kli locations)</button>
+        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-3" onclick="switchTab(3)">4. Model stack</button>
+        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-4" onclick="switchTab(4)">5. kli stats</button>
+      </div>
+
+      <div class="terminal-body">
+        <!-- Tab 1: the full screen, as the real one draws it; the demo button plays it -->
+        <div class="tab-content active" id="tab-0" role="tabpanel">
+          <div class="ln"><span class="t-prompt">$</span> <span class="t-cmd">kli</span></div>
+          <div id="tui-convo"></div>
+          <div class="tui-rule"></div>
+          <div class="tui-panel">
+            <img id="tui-golem" src="assets/golem-emet.svg" alt="O golem do Kli" />
+            <div>
+              <div class="ln"><span class="t-bold">Kli 0.1.0</span><span class="t-dim"> · </span>laptop/ollama · qwen3:14b</div>
+              <div class="ln" id="tui-status"><span class="t-green">●</span> ready</div>
+              <div class="ln t-dim" id="tui-last"></div>
+              <div class="ln t-dim" id="tui-session"></div>
+            </div>
+          </div>
+          <div class="tui-rule"></div>
+          <div id="tui-bottom"></div>
+        </div>
+
+        <!-- Tab 2: pipes and scripts -->
+        <div class="tab-content" id="tab-1" role="tabpanel">
+<pre class="tpre"><span class="t-comment"># o que vem pela entrada padrão vira contexto; a resposta sai no stdout</span>
+<span class="t-prompt">$</span> <span class="t-cmd">git diff | kli "revise este patch e aponte riscos"</span>
+
+No <span class="t-amber">src/upload.ts</span>, o leitor aberto na linha 42 não é liberado quando o parse
+falha: o return antecipado pula o <span class="t-cyan">releaseLock()</span>. Ponha o laço num try/finally
+e libere o leitor no finally.
+
+<span class="t-comment"># outro modelo só desta vez, sem mudar o padrão</span>
+<span class="t-prompt">$</span> <span class="t-cmd">kli -m anthropic/claude-sonnet-5-5 "resuma" &lt; CHANGELOG.md &gt; resumo.md</span>
+
+<span class="t-comment"># uma stack responde; --json traz a resposta e as medidas para outro programa</span>
+<span class="t-prompt">$</span> <span class="t-cmd">kli --stack compara --json "qual destes dois nomes é melhor?" | jq .</span>
+
+<span class="t-comment"># códigos de saída: 0 ok · 1 falha do provedor · 2 uso ou configuração · 130 interrompido</span></pre>
+        </div>
+
+        <!-- Tab 3: locations -->
+        <div class="tab-content" id="tab-2" role="tabpanel">
+<pre class="tpre"><span class="t-prompt">$</span> <span class="t-cmd">kli locations</span>
+location / provider   where                              default model           credentials
+laptop                this machine
+  ollama              server :11434                      qwen3:14b               <span class="t-green">✓</span> no key
+  claude              cli claude                         sonnet                  <span class="t-green">✓</span> claude's own login
+  opencode            cli opencode                       <span class="t-dim">its default</span>             <span class="t-green">✓</span> opencode's own login
+gpubox                ssh gpubox
+  llama.cpp           server :8080 · ssh tunnel          qwen2.5-7b              <span class="t-green">✓</span> no key
+  claude              cli claude                         haiku                   <span class="t-green">✓</span> claude's login there
+vertex                Google API · my-project · global   gemini-3.5-flash-lite   <span class="t-green">✓</span> gcloud ADC (user)
+anthropic             Anthropic API                      claude-sonnet-5-5       <span class="t-green">✓</span> ANTHROPIC_API_KEY in ~/.kli/.env
+<span class="t-dim">model laptop/ollama/qwen3:14b · fallback vertex</span>
+
+<span class="t-comment"># na sessão: /model abre os locais; com um nome, troca direto e vira o padrão</span>
+<span class="t-clay">›</span> <span class="t-cmd">/model gpubox/llama.cpp/qwen2.5-7b</span></pre>
+        </div>
+
+        <!-- Tab 4: a stack with two answers side by side -->
+        <div class="tab-content" id="tab-3" role="tabpanel">
+<pre class="tpre"><span class="t-comment"># na sessão, depois de /stack compara: a mesma pergunta para dois modelos ao mesmo tempo</span>
+ <span class="t-clay">›</span> em uma ou duas frases: quando usar Map em vez de objeto em JavaScript?
+ <span class="t-amber">◆</span> <span class="t-bold">stack compara</span> <span class="t-dim">· 4.4s · 2 of 2 nodes answered · 2400→319 tokens · $0.0003 · side by side saved 2.0s</span>
+ <span class="t-dim">├</span> <span class="t-green">✓</span> <span class="t-bold">local</span>  <span class="t-dim">laptop/ollama/qwen3:14b</span> · <span class="t-dim">4.3s · first token 0.6s · 1210→148 tokens · 40 tok/s</span>
+ <span class="t-dim">└</span> <span class="t-green">✓</span> <span class="t-bold">api</span>  <span class="t-dim">vertex/google/gemini-3.5-flash-lite</span> · <span class="t-dim">2.1s · first token 0.8s · 1190→171 tokens · 132 tok/s · $0.0003</span>
+
+ <span class="t-bold">local</span><span class="t-dim"> · laptop/ollama/qwen3:14b</span>             <span class="t-dim">│</span> <span class="t-bold">api</span><span class="t-dim"> · vertex/google/gemini-3.5-flash-lite</span>
+ Use Map quando as chaves não são texto,     <span class="t-dim">│</span> Map aceita qualquer tipo como chave, guarda
+ quando você adiciona e remove muito, ou     <span class="t-dim">│</span> a ordem, tem size e é mais rápido para
+ quando a ordem de inserção importa. Para um <span class="t-dim">│</span> inserir e remover com frequência. Objeto
+ registro de campos fixos, um objeto basta.  <span class="t-dim">│</span> serve para dados com forma conhecida e vira
+                                             <span class="t-dim">│</span> JSON direto.
+
+ <span class="t-bold">             local        api</span>
+<span class="t-dim"> status       </span><span class="t-dim">✓ answered   ✓ answered</span>
+<span class="t-dim"> time         4.3s         2.1s
+ first text   0.6s         0.8s
+ tokens       1210→148     1190→171
+ tok/s        40           132
+ cost         –            $0.0003
+ tools        none         none
+ steps        1            1</span></pre>
+        </div>
+
+        <!-- Tab 5: stats -->
+        <div class="tab-content" id="tab-4" role="tabpanel">
+<pre class="tpre"><span class="t-prompt">$</span> <span class="t-cmd">kli stats --days 7</span>
+ <span class="t-bold">Kli stats · last 7 days</span>
+
+ 14 sessions   61 prompts   441K tokens <span class="t-dim">(402K in → 39K out)</span>   median 2.9s   $0.41 reported
+ <span class="t-green">✓</span> 57 answered   <span class="t-amber">↷</span> 3 fallbacks   <span class="t-red">✕</span> 2 failed   <span class="t-dim">■</span> 2 interrupted
+
+ <span class="t-cyan t-strong">Median latency by provider</span>
+ laptop/ollama     <span class="t-green">▄▄</span> 1.4s  <span class="t-dim">p90 4.2s · 24 answers · 1 failure</span>
+ gpubox/llama.cpp  <span class="t-green">▄▄▄</span> 1.9s  <span class="t-dim">p90 7.8s · 15 answers · 1 failure</span>
+ vertex            <span class="t-green">▄▄▄▄▖</span> 3.1s  <span class="t-dim">p90 5.2s · 11 answers</span>
+ anthropic         <span class="t-green">▄▄▄▄▄▄▄▄▄▄▖</span> 6.8s  <span class="t-dim">p90 9.9s · 4 answers</span>
+ laptop/claude     <span class="t-green">▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄</span> 21s  <span class="t-dim">p90 34s · 3 answers</span>
+
+ <span class="t-cyan t-strong">Tokens by provider</span>
+ laptop/ollama     <span class="t-green">▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄</span> 130K  <span class="t-dim">118K in → 12K out</span>
+ laptop/claude     <span class="t-green">▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄</span> 102K  <span class="t-dim">97K in → 4.5K out</span>
+ gpubox/llama.cpp  <span class="t-green">▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄</span> 79K  <span class="t-dim">71K in → 8.1K out</span>
+ vertex            <span class="t-green">▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄</span> 73K  <span class="t-dim">64K in → 9.4K out · $0.06</span>
+ anthropic         <span class="t-green">▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▖</span> 56K  <span class="t-dim">52K in → 4.3K out · $0.35</span>
+
+ <span class="t-cyan t-strong">Answers per day</span>
+           17
+           <span class="t-green">█</span>
+     <span class="t-green">▁</span>   <span class="t-green">█ █</span>
+     <span class="t-green">█ ▃ █ █ ▇</span>
+ <span class="t-green">█</span>   <span class="t-green">█ █ █ █ █</span>
+ <span class="t-dim">─────────────</span>
+ <span class="t-dim">10-25   10-31</span></pre>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Tools -->
+  <section class="section" id="ferramentas">
+    <div class="section-header">
+      <span class="section-tag">Ferramentas</span>
+      <h2 class="section-title">Trabalha na sua pasta, como o Claude Code</h2>
+      <p class="section-subtitle">
+        O modelo pede e o Kli executa, nesta máquina, mesmo quando o modelo roda em outra. O laço segue até o modelo responder só com texto, e cada passo aparece na conversa e vai para o rastro.
+      </p>
+    </div>
+
+    <div class="tool-chips">
+      <span class="tool-chip">Read</span>
+      <span class="tool-chip">Glob</span>
+      <span class="tool-chip">Grep</span>
+      <span class="tool-chip">Write</span>
+      <span class="tool-chip">Edit</span>
+      <span class="tool-chip">Bash</span>
+      <span class="tool-chip">BashOutput</span>
+      <span class="tool-chip">KillBash</span>
+    </div>
+
+    <div class="code-panel" style="max-width: 820px; margin: 0 auto 2.5rem;">
+      <div class="panel-caption">Antes de rodar, o Kli pergunta</div>
+<pre class="tpre"> <span class="t-amber">●</span> <span class="t-bold">Bash(npm run build)</span>
+<span class="t-dim">──────────────────────────────────────────────────────────────────────</span>
+ <span class="t-bold">Run npm run build</span><span class="t-dim"> · Bash needs your permission</span>
+   <span class="t-amber">$ npm run build</span>
+
+ <span class="t-bold">Do you want to go ahead?</span>
+
+ <span class="t-clay">❯</span> 1. <span class="t-clay t-strong">Yes</span>
+   <span class="t-dim">2.</span> Yes, and don't ask again this session for npm run build commands
+   <span class="t-dim">3.</span> No, and tell Kli what to do differently (esc)
+
+ <span class="t-dim">↑/↓ choose · Enter select · 1-3 jump · Esc back</span></pre>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🔐</div>
+        <h3>Ler é livre; gravar e rodar perguntam</h3>
+        <p>
+          Ler, procurar e listar dentro da pasta não pede nada, nem por comando (<code>ls</code>, <code>cat</code>, <code>git diff</code>). Write, Edit e Bash mostram a diferença ou o comando antes. <code>Shift+Tab</code> troca o modo: accept edits grava sem perguntar, e plan só lê.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🧩</div>
+        <h3>Regras por comando</h3>
+        <p>
+          Aprovar <code>npm run build</code> libera <code>npm run build --watch</code>, mas não <code>npm publish</code>. Cada parte de <code>&amp;&amp;</code>, <code>|</code> e <code>;</code> precisa estar liberada, e o que pode esconder outro comando (<code>$(…)</code>, crases, subshell) pergunta sempre.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">⏳</div>
+        <h3>Segundo plano (Ctrl+B)</h3>
+        <p>
+          Servidor de desenvolvimento, watcher, deploy longo: <code>Ctrl+B</code> manda para o segundo plano o comando que está rodando, e o modelo segue. Ele acompanha com BashOutput e para com KillBash; <code>/jobs</code> lista o que roda.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">❗</div>
+        <h3><code>!comando</code>: quem roda é você</h3>
+        <p>
+          O Kli entrega o terminal ao comando (senha, <code>sudo</code>, <code>gcloud auth login</code>, até <code>vim</code>) e volta quando ele termina. O que apareceu fica na conversa e vai para o modelo junto com a próxima mensagem.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📄</div>
+        <h3>AGENTS.md e CLAUDE.md</h3>
+        <p>
+          O Kli lê as instruções que os outros agentes já leem, de <code>~/.kli</code> até a pasta onde ele roda. A mais perto vale mais, e <code>@caminho</code> traz outro arquivo. O <code>/status</code> mostra quais entraram.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <h3>CLIs como agentes</h3>
+        <p>
+          Escolha o Claude Code, o Antigravity, o OpenCode ou o Kimi Code como modelo. Ele trabalha na sua pasta com as ferramentas e as permissões dele, e cada passo aparece na conversa como os do Kli.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sources: location / provider / model -->
+  <section class="section routing-section" id="fontes">
+    <div class="section-header">
+      <span class="section-tag">Fontes de inferência</span>
+      <h2 class="section-title">Todas as suas fontes, com um nome só</h2>
+      <p class="section-subtitle">
+        Cada modelo tem três níveis: onde roda, quem serve e qual é. <code>laptop/ollama/qwen3:14b</code>, <code>gpubox/claude/haiku</code> e <code>anthropic/claude-sonnet-5-5</code> valem no <code>/model</code>, no <code>kli -m</code> e na reserva.
+      </p>
+    </div>
+
+    <div class="routing-grid">
+      <div class="tier-box tier-local">
+        <span class="tier-label">Esta máquina</span>
+        <h4>O seu computador</h4>
+        <p>Ao incluir a máquina, o Kli procura o que roda nela: os servidores nas portas de sempre e os CLIs que ele conhece.</p>
+        <ul class="tier-list">
+          <li>Ollama (11434) e llama.cpp (8080)</li>
+          <li>LM Studio (1234) e vLLM (8000)</li>
+          <li>Claude Code, Antigravity, OpenCode, Kimi Code</li>
+          <li>Outro CLI, com os argumentos que você der</li>
+        </ul>
+      </div>
+
+      <div class="tier-box tier-tunnel primary-tier">
+        <span class="tier-label">Outra máquina · SSH</span>
+        <h4>A sua GPU, o seu servidor</h4>
+        <p>Um servidor que só escuta em localhost lá é alcançado por um túnel SSH que o Kli abre e fecha. Um CLI roda lá, com o login daquela máquina.</p>
+        <ul class="tier-list">
+          <li><span><code>usuário@host</code> ou um apelido do <code>~/.ssh/config</code></span></li>
+          <li><span>Uma máquina no caminho (<code>ssh -J</code>)</span></li>
+          <li>A busca vai por uma conexão SSH só</li>
+          <li>Só chaves: a primeira conexão é à mão</li>
+        </ul>
+      </div>
+
+      <div class="tier-box tier-cloud">
+        <span class="tier-label">API</span>
+        <h4>Os provedores na nuvem</h4>
+        <p>HTTP direto, sem SDK. As chaves ficam em <code>~/.kli/.env</code> e aparecem na tela como <code>••••1234</code>.</p>
+        <ul class="tier-list">
+          <li>Google: Gemini e parceiros no Vertex</li>
+          <li>Anthropic (Messages API)</li>
+          <li>Compatíveis com OpenAI: OpenRouter, Groq...</li>
+          <li><span>O Google aceita o login do <code>gcloud</code></span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="features-grid" style="margin-top: 1.5rem;">
+      <div class="feature-card">
+        <div class="feature-icon">🧭</div>
+        <h3>/model</h3>
+        <p>
+          Enter desce um nível e escolhe, e digitar filtra a lista. <strong>a</strong>, <strong>e</strong> e <strong>d</strong> incluem, editam e excluem locais e provedores, e <strong>Test</strong> manda "ok" antes de salvar. O escolhido vira o padrão; <code>kli -m</code> usa outro só uma vez.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">↷</div>
+        <h3>Reserva</h3>
+        <p>
+          O <code>fallback</code> é uma lista de modelos, tentada em ordem quando o modelo falha antes de responder. Cada troca aparece no rodapé e no rastro, e o golem balança a cabeça.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Model stacks -->
+  <section class="section" id="stacks">
+    <div class="section-header">
+      <span class="section-tag">Model stacks</span>
+      <h2 class="section-title">Vários modelos respondendo como um só</h2>
+      <p class="section-subtitle">
+        Uma stack é um grafo de modelos. O prompt vai ao mesmo tempo para os nós que não recebem de ninguém, e um nó com <code>from</code> espera esses e recebe as respostas deles. Os nós de que ninguém recebe são a resposta, e duas ficam lado a lado, para comparar. Um nó pode juntar, julgar ou escolher.
+      </p>
+    </div>
+
+    <div class="split">
+      <div class="code-panel">
+        <div class="panel-caption">~/.kli/config.json</div>
+<pre class="tpre"><span class="t-cyan">"stacks"</span>: {
+  <span class="t-cyan">"compara"</span>: { <span class="t-cyan">"nodes"</span>: {
+    <span class="t-cyan">"local"</span>: { <span class="t-cyan">"model"</span>: <span class="t-amber">"laptop/ollama/lfm3"</span> },
+    <span class="t-cyan">"gpu"</span>:   { <span class="t-cyan">"model"</span>: <span class="t-amber">"gpubox/llama.cpp/qwen2.5-7b"</span> } } },
+  <span class="t-cyan">"verificada"</span>: { <span class="t-cyan">"nodes"</span>: {
+    <span class="t-cyan">"local"</span>: { <span class="t-cyan">"model"</span>: <span class="t-amber">"laptop/ollama/lfm3"</span> },
+    <span class="t-cyan">"gpu"</span>:   { <span class="t-cyan">"model"</span>: <span class="t-amber">"gpubox/llama.cpp/qwen2.5-7b"</span> },
+    <span class="t-cyan">"junta"</span>: { <span class="t-cyan">"model"</span>: <span class="t-amber">"vertex/google/gemini-3.5-flash"</span>,
+               <span class="t-cyan">"role"</span>: <span class="t-amber">"aggregate"</span>, <span class="t-cyan">"from"</span>: [<span class="t-amber">"local"</span>, <span class="t-amber">"gpu"</span>] },
+    <span class="t-cyan">"verificador"</span>: { <span class="t-cyan">"model"</span>: <span class="t-amber">"vertex/google/gemini-3.5-flash"</span>,
+               <span class="t-cyan">"role"</span>: <span class="t-amber">"verify"</span>, <span class="t-cyan">"from"</span>: [<span class="t-amber">"junta"</span>, <span class="t-amber">"local"</span>, <span class="t-amber">"gpu"</span>] } } }
+}</pre>
+      </div>
+      <div class="code-panel">
+        <div class="panel-caption">Quem responde</div>
+<pre class="tpre"><span class="t-comment"># na sessão</span>
+<span class="t-clay">›</span> <span class="t-cmd">/stack</span>           <span class="t-dim"># escolhe uma stack, ou none</span>
+<span class="t-clay">›</span> <span class="t-cmd">/stack compara</span>   <span class="t-dim"># troca direto</span>
+<span class="t-clay">›</span> <span class="t-cmd">/stack off</span>       <span class="t-dim"># volta ao modelo</span>
+<span class="t-clay">›</span> <span class="t-cmd">/stackbuilder</span>    <span class="t-dim"># monta o grafo no navegador</span>
+
+<span class="t-comment"># uma vez só, no terminal</span>
+<span class="t-prompt">$</span> <span class="t-cmd">kli --stack verificada "…"</span>
+
+<span class="t-dim">local e gpu rodam juntos; junta recebe
+as respostas como A e B, sem o nome do
+modelo; o verificador só julga.</span></pre>
+      </div>
+    </div>
+
+    <h3 class="sub-title">Juntar, julgar, escolher</h3>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🧮</div>
+        <h3>Agregar (<code>aggregate</code>)</h3>
+        <p>
+          Junta as respostas numa só e diz quanto veio de cada ramo (<code>from local 50% · gpu 50%</code>), num bloco que o Kli tira do texto antes de mostrar.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">✅</div>
+        <h3>Verificar (<code>verify</code>)</h3>
+        <p>
+          Só julga. Lista os requisitos do pedido (conteúdo, formato, tamanho, língua) e marca cada um como cumprido, parcial ou faltando em cada resposta. A aderência sai das marcas, não de uma nota do modelo.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🗳️</div>
+        <h3>Escolher (<code>choose</code>)</h3>
+        <p>
+          Uma das respostas vira a da stack, e a conversa segue dela. Quem escolhe vem em <code>by</code>, na ordem de tentar: o modelo do nó, você (na tela ou no navegador) ou um modelo de decisão, quando houver um treinado.
+        </p>
+      </div>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📏</div>
+        <h3>Medidas que dá para comparar</h3>
+        <p>
+          Por nó: tempo, primeiro texto, tokens, tokens por segundo, custo, passos e ferramentas. Tokens por segundo só quando a medida é honesta: um passo, sem ferramenta. Na stack, o tempo de parede e quanto rodar lado a lado economizou.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>Ler, ou gravar numa cópia</h3>
+        <p>
+          Por padrão os nós só leem (as ferramentas de leitura do Kli, ou o CLI em modo plan), então nós rodando juntos nunca param para perguntar. Com <code>"tools": "write"</code>, cada nó programa na sua cópia da pasta (um <code>git worktree</code>), os testes rodam em cada cópia, quem julga recebe os diffs, e você escolhe qual aplicar (<a href="#programar">abaixo</a>).
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">⚖️</div>
+        <h3>Sem reserva escondida</h3>
+        <p>
+          O <code>fallback</code> geral não vale numa stack: se outro modelo respondesse por um nó, a comparação mentiria. Cada nó pode ter o seu, e a tela mostra quem respondeu de fato.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>Cada nó tem a sua conversa</h3>
+        <p>
+          Na pergunta seguinte, cada nó continua do que ele mesmo disse. Esc para todos os nós, e o que já tinha chegado fica, marcado como interrompido.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🧾</div>
+        <h3>Rastro por nó</h3>
+        <p>
+          Cada evento leva a stack e o nó, e <code>kli sessions &lt;id&gt;</code> mostra <code>[nó]</code> em cada linha. No <code>kli stats</code>, a pergunta conta uma vez e cada resposta conta para o modelo que respondeu.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🖥️</div>
+        <h3>No terminal e em scripts</h3>
+        <p>
+          Na tela cheia, a árvore dos nós se preenche enquanto eles trabalham, e as respostas chegam lado a lado. No <code>kli -p</code>, cada nó aparece no stderr e as respostas vão para o stdout; <code>--json</code> traz tudo.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Programming with several agents: branches that write, each in its own copy -->
+  <section class="section" id="programar">
+    <div class="section-header">
+      <span class="section-tag">Ramos que gravam</span>
+      <h2 class="section-title">Programar com vários agentes, e escolher o melhor</h2>
+      <p class="section-subtitle">
+        Com <code>"tools": "write"</code>, cada nó programa numa cópia da sua pasta, só dele. O Kli prepara cada cópia, roda os testes do projeto em cada uma, passa os diffs para quem julga e, no fim, pergunta qual aplicar. Nada chega à sua pasta sem você escolher.
+      </p>
+    </div>
+
+    <div class="split">
+      <div class="code-panel">
+        <div class="panel-caption">~/.kli/config.json</div>
+<pre class="tpre"><span class="t-cyan">"programa"</span>: { <span class="t-cyan">"nodes"</span>: {
+  <span class="t-cyan">"opus"</span>:   { <span class="t-cyan">"model"</span>: <span class="t-amber">"laptop/claude/opus"</span>, <span class="t-cyan">"tools"</span>: <span class="t-amber">"write"</span> },
+  <span class="t-cyan">"gemini"</span>: { <span class="t-cyan">"model"</span>: <span class="t-amber">"vertex/google/gemini-3.5-flash"</span>,
+              <span class="t-cyan">"tools"</span>: <span class="t-amber">"write"</span> },
+  <span class="t-cyan">"agy"</span>:    { <span class="t-cyan">"model"</span>: <span class="t-amber">"laptop/agy"</span>, <span class="t-cyan">"tools"</span>: <span class="t-amber">"write"</span> },
+  <span class="t-cyan">"juiz"</span>:   { <span class="t-cyan">"model"</span>: <span class="t-amber">"vertex/google/gemini-3.5-flash"</span>,
+              <span class="t-cyan">"role"</span>: <span class="t-amber">"verify"</span>, <span class="t-cyan">"from"</span>: [<span class="t-amber">"opus"</span>, <span class="t-amber">"gemini"</span>, <span class="t-amber">"agy"</span>] } } }
+
+<span class="t-dim">a stack não diz como instalar nem como testar:
+isso é do projeto, e o Kli descobre sozinho.</span></pre>
+      </div>
+      <div class="code-panel">
+        <div class="panel-caption">Como preparar e testar: do projeto</div>
+<pre class="tpre"><span class="t-comment"># 1. o projeto declara, se quiser: .kli/write.json</span>
+{ <span class="t-cyan">"check"</span>: <span class="t-amber">"make test"</span>,
+  <span class="t-cyan">"run"</span>:   [<span class="t-amber">"make test"</span>],
+  <span class="t-cyan">"fence"</span>: { <span class="t-cyan">"network"</span>: <span class="t-amber">true</span> } }
+
+<span class="t-comment"># 2. senão, o "write" da stack (uma stack de um projeto só)</span>
+<span class="t-comment"># 3. senão, os arquivos do projeto</span>
+bun.lock           <span class="t-dim">→</span> bun install <span class="t-dim">·</span> bun run test
+package-lock.json  <span class="t-dim">→</span> npm ci <span class="t-dim">·</span> npm test
+go.mod             <span class="t-dim">→</span> go mod download <span class="t-dim">·</span> go test ./...
+Cargo.toml         <span class="t-dim">→</span> cargo fetch <span class="t-dim">·</span> cargo test
+uv.lock            <span class="t-dim">→</span> uv sync <span class="t-dim">·</span> uv run pytest
+App.slnx           <span class="t-dim">→</span> dotnet restore <span class="t-dim">·</span> dotnet test
+<span class="t-dim">(e pnpm, yarn e requirements.txt; sem nada na raiz,
+as pastas logo abaixo: backend/, frontend/)</span></pre>
+      </div>
+    </div>
+
+    <div class="code-panel stack-screen">
+      <div class="panel-caption">Na tela cheia, depois de /stack programa</div>
+<pre class="tpre"> <span class="t-clay">›</span> O teste em soma.test.ts falha. Corrija.
+ <span class="t-amber">◆</span> <span class="t-bold">stack programa</span> <span class="t-dim">· 41.5s · 4 of 4 nodes answered · 141574→3525 tokens · $0.17 · side by side saved 22.3s</span>
+ <span class="t-dim">├</span> <span class="t-green">✓</span> <span class="t-bold">opus</span>  <span class="t-dim">laptop/claude/opus · 11.4s · 110633→706 tokens · $0.17 · 4 tools · 1 file +1 −1 · check passed</span>
+ <span class="t-dim">├</span> <span class="t-green">✓</span> <span class="t-bold">gemini</span>  <span class="t-dim">vertex/google/gemini-3.5-flash · 11.2s · 10916→453 tokens · 6 tools (1 failed) · 1 file +1 −1 · check passed</span>
+ <span class="t-dim">├</span> <span class="t-green">✓</span> <span class="t-bold">agy</span>  <span class="t-dim">laptop/agy · 37.4s · 18125→1557 tokens · 4 tools · 1 file +1 −1 · check passed</span>
+ <span class="t-dim">└</span> <span class="t-green">✓</span> <span class="t-bold">juiz</span>  <span class="t-dim">vertex/google/gemini-3.5-flash · 3.8s · adherence opus 100 · gemini 100 · agy 100</span>
+ <span class="t-comment">  … as três respostas lado a lado e a tabela de medidas, com as linhas changes e check …</span>
+
+ <span class="t-amber">◇</span> <span class="t-bold">adherence to the request</span> <span class="t-dim">· judged by juiz</span>
+                                                       <span class="t-bold">opus       gemini     agy</span>
+ 1. Corrigir a função soma para o teste passar         <span class="t-green">✓</span>          <span class="t-green">✓</span>          <span class="t-green">✓</span>
+ 2. Responder em português                             <span class="t-green">✓</span>          <span class="t-green">✓</span>          <span class="t-green">✓</span>
+ 3. the project's check passes (bun test)              <span class="t-green">✓</span>          <span class="t-green">✓</span>          <span class="t-green">✓</span>
+ <span class="t-bold">adherence                                             100/100    100/100    100/100</span>
+
+ <span class="t-amber">✎</span> <span class="t-bold">opus</span> <span class="t-dim">· laptop/claude/opus · 1 file +1 −1 · check passed</span>
+   soma.ts <span class="t-green">+1</span> <span class="t-red">−1</span>
+   <span class="t-dim">set up with bun install · checked with bun test · from bun.lock</span>
+   <span class="t-dim">fenced by sandbox-exec: writes only in its copy, no network</span>
+ <span class="t-comment">  … o mesmo para gemini e agy, com o caminho de cada diff …</span>
+
+ <span class="t-bold">Apply which changes to your folder?</span>
+ <span class="t-dim">the copies start again from your folder on the next prompt · Esc: none, each node goes on in its copy</span>
+ <span class="t-clay">❯</span> 1. opus · laptop/claude/opus                <span class="t-dim">1 file +1 −1 · check passed · adherence 100</span>
+   2. gemini · vertex/google/gemini-3.5-flash   <span class="t-dim">1 file +1 −1 · check passed · adherence 100</span>
+   3. agy · laptop/agy                          <span class="t-dim">1 file +1 −1 · check passed · adherence 100</span>
+   4. none                                      <span class="t-dim">your folder stays as it is</span></pre>
+    </div>
+    <p class="plan-legend" style="margin-bottom: 2rem;">
+      Uma execução real, num projeto com uma função que subtraía em vez de somar: o Kli achou o <code>bun.lock</code>, preparou cada cópia com <code>bun install</code> e rodou o <code>bun test</code> em cada uma. Os três corrigiram, a checagem passou nas três (cada uma dentro da cerca), e o juiz julgou só o pedido: ele não recebe as instruções do Kli, que antes viravam requisito ("ser direto e conciso").
+    </p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🌿</div>
+        <h3>Uma cópia para cada nó</h3>
+        <p>
+          Um <code>git worktree</code> que parte da pasta como você a vê: o último commit, o que você mudou e não comitou, e os arquivos novos. A cópia dura a conversa, então na pergunta seguinte o nó segue do que fez.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🧪</div>
+        <h3>Os testes em cada cópia</h3>
+        <p>
+          Quando o nó termina, o Kli mede o diff e, se ele mudou arquivos, roda a checagem do projeto na cópia (Rust, Go, .NET, npm, Python…). Quem julga recebe os diffs e se os testes passaram; no verificador, "os testes passam" vira um requisito marcado pelo Kli, não pelo modelo. Um nó que estourou o tempo guarda o que fez.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">✅</div>
+        <h3>Você escolhe o que aplicar</h3>
+        <p>
+          O primeiro da lista é o escolhido por um nó <code>choose</code>, ou o de maior aderência. Aplicar muda só os arquivos, tudo ou nada, e as cópias recomeçam da sua pasta. No <code>kli -p</code> nada é aplicado: cada diff fica guardado para um <code>git apply</code>.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📦</div>
+        <h3>Do projeto, não da stack</h3>
+        <p>
+          Como instalar e testar vem do <code>.kli/write.json</code> do projeto ou dos arquivos dele (também nas pastas logo abaixo: um backend em .NET e um frontend em npm), e a tela diz de onde veio. Sem nada encontrado, os nós programam sem setup nem checagem, e a tela avisa. Você não configura nada por projeto.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🤝</div>
+        <h3>Qualquer agente</h3>
+        <p>
+          O laço do próprio Kli, com qualquer modelo que use ferramentas, e o Claude Code, o OpenCode, o Kimi Code e o Antigravity: cada CLI trabalha como agente dentro da sua cópia, com as ferramentas dele. Os cinco foram testados no mesmo bug (o laço do Kli com o Gemini).
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🚧</div>
+        <h3>Uma cerca do sistema</h3>
+        <p>
+          Os comandos do nó e a checagem rodam no <code>sandbox-exec</code> (macOS) ou no <code>bwrap</code> (Linux): gravam só na cópia e nos caches, não leem as suas chaves e não saem para a rede. Uma lista de comandos não bastava: num teste, um modelo rodou o <code>bun install</code> recusado por um preload do <code>bun test</code>. Cada recusa aparece na linha do nó.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- The stack builder -->
+  <section class="section" id="stackbuilder">
+    <div class="section-header">
+      <span class="section-tag">Stack builder</span>
+      <h2 class="section-title">Monte, teste e salve no navegador</h2>
+      <p class="section-subtitle">
+        <code>/stackbuilder</code> na sessão, ou <code>kli stackbuilder</code> no terminal, abre uma página servida pelo próprio <code>kli</code> e embutida no binário. A configuração continua sendo a verdade: a página desenha o que está nela e grava lá quando você salva.
+      </p>
+    </div>
+
+    <figure class="shot">
+      <img src="assets/stackbuilder.jpg" width="2000" height="1389" loading="lazy" alt="O stack builder: o grafo da stack verificada com os nós acesos depois de responder, o painel do verificador, a resposta, a tabela de medidas e o veredito" />
+      <figcaption>
+        Uma execução real da stack <code>verificada</code>: o lfm3 do laptop e o qwen2.5-7b da GPU responderam em 2,6 s e 1,8 s, o Gemini juntou as duas meio a meio, e o verificador deu 100% à resposta final e 67% ao modelo que passou das duas frases pedidas.
+      </figcaption>
+    </figure>
+
+    <div class="features-grid four">
+      <div class="feature-card">
+        <div class="feature-icon">🕸️</div>
+        <h3>O grafo</h3>
+        <p>
+          Puxe do ponto da direita de um nó para passar a resposta a outro; Delete tira um nó ou uma ligação. Uma ligação que fecharia um círculo é recusada com o motivo, e <strong>Arrange</strong> volta às colunas.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🧰</div>
+        <h3>O painel do nó</h3>
+        <p>
+          Modelo (com a lista que o provedor tem), papel, quem escolhe, de quem recebe, mínimo de entradas, ferramentas (ler ou gravar), reserva e instruções. Os problemas aparecem enquanto você edita, e com eles não se salva.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">▶️</div>
+        <h3>Testar antes de salvar</h3>
+        <p>
+          Um prompt roda a stack como está na tela. Os nós acendem enquanto trabalham, com a ferramenta que estão usando, e chegam as respostas, as medidas, as contribuições e o veredito. A escolha pela pessoa é feita ali mesmo.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3>Só nesta máquina</h3>
+        <p>
+          A página escuta em <code>127.0.0.1</code>, e cada chamada leva o token do endereço que o <code>kli</code> abriu: outra página do navegador não chega à sua configuração. A sessão aberta acompanha o que você salva.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Where Kli fits -->
+  <section class="section" id="comparacao">
+    <div class="section-header">
+      <span class="section-tag">Onde o Kli entra</span>
+      <h2 class="section-title">Os outros agentes viram peças</h2>
+      <p class="section-subtitle">
+        Fizemos uma busca ampla: nenhuma TUI faz o conjunto que o Kli propõe. Cada pedaço existe, espalhado por ferramentas diferentes, e várias delas nem são de terminal. O Kli junta tudo, com as fontes que você já tem.
+      </p>
+    </div>
+
+    <h3 class="sub-title">Quem já faz um pedaço</h3>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">⚖️</div>
+        <h3>Vários modelos e um juiz</h3>
+        <p class="who"><strong>llm-consortium</strong> (plugin do <code>llm</code>, de Simon Willison): modelos em paralelo, um árbitro junta e repete até um limiar de confiança. <strong>llm-council</strong>, de Andrej Karpathy (web): respostas lado a lado, revisão anônima em que cada modelo ranqueia os outros, e um "presidente" que junta. <strong>multi-llm-consensus</strong> (biblioteca Python).</p>
+        <p class="gap"><strong>Falta:</strong> grafo (o fluxo é fixo), verificador com requisitos e ferramentas na pasta.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🤝</div>
+        <h3>Outros CLIs como peças</h3>
+        <p class="who"><strong>Orch</strong> e <strong>Neurones</strong> comparam e juntam o Claude Code, o Codex e o Gemini CLI; <strong>cli-agents</strong> monta um conselho em painel ou debate; <strong>oh-my-claude-sisyphus</strong> deixa o Claude juntar o Codex e o Gemini.</p>
+        <p class="gap"><strong>Falta:</strong> servidores locais, máquinas por SSH, APIs e medidas.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🌳</div>
+        <h3>Agentes em paralelo em worktrees</h3>
+        <p class="who"><strong>Claude Squad</strong> (TUI: Claude Code, Codex, Gemini e Aider, cada um num worktree e numa branch), <strong>amux</strong>, <strong>Vibe Kanban</strong> e outros.</p>
+        <p class="gap"><strong>Falta:</strong> comparar, julgar e juntar o que cada agente fez.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🕸️</div>
+        <h3>Grafo visual com nós de busca</h3>
+        <p class="who"><strong>Langflow</strong>, <strong>n8n</strong> (tem até um fluxo de "conselho" de modelos), <strong>Dify</strong>, <strong>Rivet</strong> (editor de nós para desktop) e <strong>Flowise</strong>.</p>
+        <p class="gap"><strong>Falta:</strong> são plataformas web ou desktop, não um harness de terminal na sua pasta; não usam outros CLIs como modelos.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📏</div>
+        <h3>Verificar e medir</h3>
+        <p class="who"><strong>promptfoo</strong>: compara provedores lado a lado, com modelos como juízes e métricas de busca (<em>context-relevance</em>, <em>context-recall</em>).</p>
+        <p class="gap"><strong>Falta:</strong> é avaliação em lote, fora da conversa e sem grafo de agentes.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>Chat de terminal com RAG</h3>
+        <p class="who"><strong>aichat</strong>: mais de 20 provedores, RAG em documentos locais, agentes e sessões.</p>
+        <p class="gap"><strong>Falta:</strong> um modelo por vez, sem grafo e sem comparação.</p>
+      </div>
+    </div>
+
+    <h3 class="sub-title">O que o Kli junta, e o que ainda falta</h3>
+    <div class="features-grid four">
+      <div class="feature-card">
+        <div class="feature-icon">🤝</div>
+        <h3>Os outros CLIs como modelos</h3>
+        <p>
+          O Claude Code, o Antigravity, o OpenCode e o Kimi Code entram como modelos, ao lado dos servidores locais, das máquinas por SSH e das APIs. Num nó de stack, cada um trabalha com as próprias ferramentas.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🔀</div>
+        <h3>Comparar e combinar</h3>
+        <p>
+          Ramos em paralelo, agregador, verificador e escolha, com agentes que leem a sua pasta ou programam, cada um na sua cópia, com os testes rodados em cada uma: o que uma ferramenta de comparação faz, mas dentro da conversa.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📐</div>
+        <h3>Medir de verdade</h3>
+        <p>
+          Primeiro texto, tokens por segundo sem o raciocínio, custo, quem respondeu de fato e a aderência ao pedido, por nó, no rastro e no <code>kli stats</code>.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🧭</div>
+        <h3>O que ainda falta</h3>
+        <p>
+          MCP, retomar uma sessão, resumir o contexto quando a conversa cresce, imagens e sandbox do sistema. Nisso o Claude Code, o Codex e o OpenCode vão à frente, e o Kli os usa como peças.
+        </p>
+      </div>
+    </div>
+
+    <h3 class="sub-title">Ideias que vamos trazer</h3>
+    <div class="features-grid four">
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>Limiar de confiança</h3>
+        <p>Repetir até a resposta passar de um limiar, e rodar várias instâncias do mesmo modelo para ver a variação. <span class="gap">Do llm-consortium.</span></p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🗳️</div>
+        <h3>Revisão anônima</h3>
+        <p>Cada modelo ranqueia os outros antes da síntese. E um alerta para o verificador e a escolha: modelos tendem a preferir respostas longas e vagas. <span class="gap">Do llm-council.</span></p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔬</div>
+        <h3>Medir a busca</h3>
+        <p><em>Context-relevance</em> e <em>context-recall</em> para o balizamento: separar a falha da busca da falha do modelo. <span class="gap">Do promptfoo.</span></p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌿</div>
+        <h3>Um worktree por ramo</h3>
+        <p>Já trouxemos: cada ramo que grava trabalha no seu worktree, e o Kli compara, julga e aplica o que cada um fez. <span class="gap">Do Claude Squad.</span></p>
+      </div>
+    </div>
+
+    <p class="research-note">
+      Pesquisa feita em 01/11/2026 em ferramentas de terminal, orquestradores de CLIs, construtores visuais e ferramentas de avaliação. Não é exaustiva, e essa área muda toda semana: os nomes e a situação de cada projeto podem ter mudado.
+    </p>
+  </section>
+
+  <!-- The plan -->
+  <section class="section" id="plano">
+    <div class="section-header">
+      <span class="section-tag">Plano</span>
+      <h2 class="section-title">O que vem a seguir</h2>
+      <p class="section-subtitle">
+        O desenho combinado para as próximas fatias, ainda sem código. É daqui que sai o que vai ser escrito; a ordem e os detalhes ainda podem mudar.
+      </p>
+    </div>
+
+    <h3 class="sub-title">Balizamento: contexto em qualquer ponto do grafo</h3>
+    <p class="plan-legend" style="margin-bottom: 1.25rem;">
+      Um card <code>ground</code> traz contexto de fontes de dados e entrega a etapa seguinte balizada. Ele entra antes de um ramo, depois de um rascunho, antes do agregador ou do verificador, e cada ramo pode ter os seus, com fontes diferentes em momentos diferentes. A base já roda: o card, os dois modos e a fonte de arquivos locais (Markdown, texto, CSV, JSON); as outras fontes vêm uma por vez.
+    </p>
+
+    <div class="plan-diagram">
+      <svg viewBox="0 0 1320 380" role="img" aria-label="Um grafo de stack com cards de balizamento em momentos diferentes de cada ramo">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#64748b" />
+          </marker>
+        </defs>
+        <path class="edge" marker-end="url(#arrow)" d="M100,200 C120,200 114,81 134,81" />
+        <path class="edge" marker-end="url(#arrow)" d="M100,200 C120,200 114,321 134,321" />
+        <path class="edge" marker-end="url(#arrow)" d="M312,81 L338,81" />
+        <path class="edge" marker-end="url(#arrow)" d="M516,81 L542,81" />
+        <path class="edge" marker-end="url(#arrow)" d="M720,81 L746,81" />
+        <path class="edge" marker-end="url(#arrow)" d="M312,321 L338,321" />
+        <path class="edge" marker-end="url(#arrow)" d="M516,321 L542,321" />
+        <path class="edge" marker-end="url(#arrow)" d="M924,81 C946,81 942,201 964,201" />
+        <path class="edge" marker-end="url(#arrow)" d="M720,321 C850,321 900,201 964,201" />
+        <path class="edge" marker-end="url(#arrow)" d="M1116,201 L1148,201" />
+        <path class="edge" marker-end="url(#arrow)" d="M1230,300 L1230,238" />
+        <rect class="pill" x="10" y="182" width="90" height="36" rx="18" />
+        <text class="pill-text" x="55" y="205" text-anchor="middle">prompt</text>
+      <g class="ground">
+        <rect class="box" x="136" y="48" width="176" height="66" rx="10" />
+        <text class="name" x="150" y="70">◈ docs</text>
+        <text class="sub" x="150" y="87">ground · enrich</text>
+        <text class="tag" x="150" y="103">qdrant · files</text>
+      </g>
+      <g>
+        <rect class="box" x="340" y="48" width="176" height="66" rx="10" />
+        <text class="name" x="354" y="70">local</text>
+        <text class="sub" x="354" y="87">laptop/ollama/lfm3</text>
+      </g>
+      <g class="ground">
+        <rect class="box" x="544" y="48" width="176" height="66" rx="10" />
+        <text class="name" x="558" y="70">◈ fatos</text>
+        <text class="sub" x="558" y="87">ground · restrict</text>
+        <text class="tag" x="558" y="103">sql · gdrive · resposta</text>
+      </g>
+      <g>
+        <rect class="box" x="748" y="48" width="176" height="66" rx="10" />
+        <text class="name" x="762" y="70">revisor</text>
+        <text class="sub" x="762" y="87">vertex/gemini-3.5-flash</text>
+      </g>
+      <g>
+        <rect class="box" x="136" y="288" width="176" height="66" rx="10" />
+        <text class="name" x="150" y="310">gpu</text>
+        <text class="sub" x="150" y="327">gpubox/llama.cpp</text>
+      </g>
+      <g class="ground">
+        <rect class="box" x="340" y="288" width="176" height="66" rx="10" />
+        <text class="name" x="354" y="310">◈ manuais</text>
+        <text class="sub" x="354" y="327">ground · enrich</text>
+        <text class="tag" x="354" y="343">files · resposta</text>
+      </g>
+      <g>
+        <rect class="box" x="544" y="288" width="176" height="66" rx="10" />
+        <text class="name" x="558" y="310">refina</text>
+        <text class="sub" x="558" y="327">gpubox/llama.cpp</text>
+      </g>
+      <g>
+        <rect class="box" x="966" y="168" width="150" height="66" rx="10" />
+        <text class="name" x="980" y="190">junta</text>
+        <text class="sub" x="980" y="207">aggregate</text>
+      </g>
+      <g class="judge">
+        <rect class="box" x="1150" y="168" width="160" height="66" rx="10" />
+        <text class="name" x="1164" y="190">verificador</text>
+        <text class="sub" x="1164" y="207">verify</text>
+      </g>
+      <g class="ground">
+        <rect class="box" x="1150" y="300" width="160" height="66" rx="10" />
+        <text class="name" x="1164" y="322">◈ política</text>
+        <text class="sub" x="1164" y="339">ground · restrict</text>
+        <text class="tag" x="1164" y="355">files</text>
+      </g>
+      </svg>
+    </div>
+    <p class="plan-legend">
+      ◈ <code>ground</code> · <strong>enrich</strong> acrescenta (o modelo usa quando ajuda e cita) · <strong>restrict</strong> limita (só o contexto, e diz quando falta) · "resposta": a busca sai do rascunho anterior, não do pedido
+    </p>
+
+    <div class="split">
+      <div class="code-panel">
+        <div class="panel-caption">Esboço · src/core/sources</div>
+<pre class="tpre"><span class="t-comment">// cada fonte de dados é um adaptador com a mesma forma</span>
+<span class="t-cyan">export interface</span> DataSource {
+  <span class="t-cyan">readonly</span> type: <span class="t-amber">"files"</span> | <span class="t-amber">"sql"</span> | <span class="t-amber">"qdrant"</span> | <span class="t-amber">"weaviate"</span>
+               | <span class="t-amber">"ragnarock"</span> | <span class="t-amber">"gdrive"</span>;
+  search(query: string, options: { top: number; signal?: AbortSignal }):
+    Promise&lt;Passage[]&gt;;
+}
+
+<span class="t-comment">// o que o ground recebe de qualquer fonte</span>
+<span class="t-cyan">export interface</span> Passage {
+  title: string;     <span class="t-dim">// "Política de Reembolso"</span>
+  ref: string;       <span class="t-dim">// "gdrive:politicas"</span>
+  link?: string;     <span class="t-dim">// para a citação</span>
+  text: string;
+  score?: number;
+  modified?: string;
+}</pre>
+      </div>
+      <div class="code-panel">
+        <div class="panel-caption">O que a etapa seguinte recebe</div>
+<pre class="tpre"><span class="t-cyan">&lt;request&gt;</span>quanto vendemos de Grace em outubro?<span class="t-cyan">&lt;/request&gt;</span>
+<span class="t-cyan">&lt;answer from="A"&gt;</span><span class="t-dim">…o rascunho que chegou ao ground…</span><span class="t-cyan">&lt;/answer&gt;</span>
+<span class="t-cyan">&lt;context&gt;</span>
+[1] <span class="t-amber">sql:vendas</span> · 3 linhas
+    | produto | mês | qtd | …
+[2] <span class="t-amber">gdrive:politicas</span> · Política de Reembolso
+    (Docs) · alterado em 28/10 · drive.google.com/…
+<span class="t-cyan">&lt;/context&gt;</span>
+<span class="t-cyan">&lt;rules&gt;</span>Responda só com o contexto e cite [n].
+Se não estiver lá, diga.<span class="t-cyan">&lt;/rules&gt;</span>
+
+<span class="t-comment"># por dentro: consulta → busca nas fontes (em paralelo)
+#   → regras → orçamento de tokens → pacote</span></pre>
+      </div>
+    </div>
+
+    <div class="code-panel" style="max-width: 900px; margin: 0 auto 2rem;">
+      <div class="panel-caption">~/.kli/config.json · as fontes ficam declaradas uma vez</div>
+<pre class="tpre"><span class="t-cyan">"sources"</span>: {
+  <span class="t-cyan">"politicas"</span>: { <span class="t-cyan">"type"</span>: <span class="t-amber">"gdrive"</span>, <span class="t-cyan">"folder"</span>: <span class="t-amber">"https://drive.google.com/drive/folders/…"</span> },
+  <span class="t-cyan">"docs"</span>:      { <span class="t-cyan">"type"</span>: <span class="t-amber">"qdrant"</span>, <span class="t-cyan">"url"</span>: <span class="t-amber">"http://localhost:6333"</span>, <span class="t-cyan">"embed"</span>: <span class="t-amber">"laptop/ollama/bge-m3"</span> },
+  <span class="t-cyan">"vendas"</span>:    { <span class="t-cyan">"type"</span>: <span class="t-amber">"sql"</span>, <span class="t-cyan">"urlEnv"</span>: <span class="t-amber">"VENDAS_DB"</span>, <span class="t-cyan">"query"</span>: <span class="t-amber">"select … where produto ilike :termo"</span> }
+},
+<span class="t-cyan">"fatos"</span>: { <span class="t-cyan">"role"</span>: <span class="t-amber">"ground"</span>, <span class="t-cyan">"from"</span>: [<span class="t-amber">"local"</span>], <span class="t-cyan">"sources"</span>: [<span class="t-amber">"vendas"</span>, <span class="t-amber">"politicas"</span>],
+           <span class="t-cyan">"mode"</span>: <span class="t-amber">"restrict"</span>, <span class="t-cyan">"query"</span>: <span class="t-amber">"answers"</span>, <span class="t-cyan">"budget"</span>: 2000 }</pre>
+    </div>
+
+    <h3 class="sub-title">Fontes de dados: plugáveis, todas iguais</h3>
+    <div class="features-grid five">
+      <div class="feature-card">
+        <div class="feature-icon">📁</div>
+        <h3>Arquivos</h3>
+        <p><code>.md</code>, <code>.txt</code>, <code>.csv</code>, <code>.json</code>; depois <code>.xlsx</code> e <code>.pdf</code>. O Kli recorta os trechos.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🗄️</div>
+        <h3>SQL</h3>
+        <p>PostgreSQL, MySQL e SQLite, com o cliente que vem no Bun. Consultas fixas e só leitura.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🧭</div>
+        <h3>Vetorial</h3>
+        <p>Qdrant e Weaviate por HTTP, com o embedding vindo de um modelo dos seus locais.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔎</div>
+        <h3>RAGnaRock</h3>
+        <p>Um RAG com API própria, pela rota de busca dele; ou por MCP, quando o Kli tiver.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">☁️</div>
+        <h3>Google Drive</h3>
+        <p>Uma pasta, com o login OAuth do próprio usuário (só leitura) e a busca do próprio Drive.</p>
+      </div>
+    </div>
+
+    <h3 class="sub-title">A ordem das fatias</h3>
+    <ol class="roadmap">
+      <li>
+        <h4>Ramos que gravam <span class="status done">pronto</span></h4>
+        <p>Cada ramo da stack trabalha numa cópia da pasta (um <code>git worktree</code>), com os comandos que a stack libera e a checagem do projeto (os testes) em cada cópia. Quem julga recebe os diffs, e você escolhe qual aplicar.</p>
+      </li>
+      <li>
+        <h4>Balizamento: a base <span class="status done">pronto</span></h4>
+        <p>O papel <code>ground</code>, a forma comum das fontes, a fonte de arquivos locais, os modos <code>enrich</code> e <code>restrict</code>, a consulta, as regras, o orçamento de tokens, o rastro, o card no builder e a prévia do que foi injetado. Em <code>restrict</code>, o modelo diz quando a resposta não está no contexto.</p>
+      </li>
+      <li>
+        <h4>Balizamento: uma fonte por vez <span class="status next">próxima</span></h4>
+        <p>Google Drive, Qdrant e Weaviate, RAGnaRock, SQL, e o Excel e o PDF nos arquivos, cada uma numa fatia, na ordem que for decidida. Depois, o modelo opcional no card, para extrair os termos de busca e resumir.</p>
+      </li>
+      <li>
+        <h4>Cercar os ramos que gravam <span class="status done">pronto</span></h4>
+        <p>Os comandos e a checagem de cada ramo numa caixa do sistema (<code>sandbox-exec</code> no macOS, <code>bwrap</code> no Linux), gravando só na cópia e sem rede, e as recusas contadas na linha do nó.</p>
+      </li>
+      <li>
+        <h4>Requisitos do verificador <span class="status done">pronto</span></h4>
+        <p>Uma lista fixa de critérios no nó <code>verify</code>, julgados antes dos que ele tira do pedido, editável no builder; e o juiz sem as instruções do Kli.</p>
+      </li>
+      <li>
+        <h4>O dia a dia <span class="status open">em discussão</span></h4>
+        <p>O que fazer quando a conversa cresce além do contexto, retomar uma sessão e o MCP nas ferramentas.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Core Features -->
+  <section class="section" id="features">
+    <div class="section-header">
+      <span class="section-tag">Engenharia Pura</span>
+      <h2 class="section-title">Projetado para eliminar toda a gordura</h2>
+      <p class="section-subtitle">
+        TypeScript no Bun, sem SDK e sem framework de agente: o laço e a tela são do próprio Kli.
+      </p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Um binário só</h3>
+        <p>
+          <code>bun build --compile</code> gera o <code>dist/kli</code>, com a página do <code>/stackbuilder</code> embutida. React e React Flow servem só a essa página; o resto do Kli não tem dependência.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <h3>HTTP direto, sem SDK</h3>
+        <p>
+          Cada provedor fala o próprio protocolo por HTTP, com streaming: compatível com OpenAI, Gemini no Vertex e Messages da Anthropic. O núcleo traduz o jeito de cada um pedir ferramentas.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🛠️</div>
+        <h3>Unix Piping de Primeira Classe</h3>
+        <p>
+          <code>cat log.txt | kli "resuma"</code> ou <code>git diff | kli "revise"</code>: o que vem pela entrada padrão vira contexto, e a resposta sai no stdout, com códigos de saída para scripts.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📜</div>
+        <h3>A conversa fica no terminal</h3>
+        <p>
+          Cada pergunta, resposta e ferramenta vai para o histórico de rolagem do próprio terminal, como no Claude Code. Rolar para cima chega ao começo da sessão, e a conversa continua lá quando você sai.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Rastro e estatísticas</h3>
+        <p>
+          Cada sessão vira um JSONL com pedidos, respostas, falhas, reservas, ferramentas e <code>!comandos</code>, com provedor, modelo, tempo e tokens. <code>kli stats</code> desenha desfechos, latência e tokens por provedor e respostas por dia.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🔑</div>
+        <h3>Chaves fora da configuração</h3>
+        <p>
+          As chaves vão para <code>~/.kli/.env</code>, só do dono. A configuração guarda o nome da variável, a tela mostra <code>••••1234</code>, e a chave não vai para o rastro nem para os CLIs.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mascot Interactive Playground -->
+  <section class="section" id="mascote">
+    <div class="section-header">
+      <span class="section-tag">Identidade & Filosofia</span>
+      <h2 class="section-title">O Mascote Golem</h2>
+      <p class="section-subtitle">
+        Na tradição cabalística, o <em>kli</em> é o vaso receptor de luz e o golem é modelado em barro cru. No terminal, ele ganha vida em uma matriz de 20×10 pixels para refletir o estado do modelo em tempo real.
+      </p>
+    </div>
+
+    <div class="mascot-interactive">
+      <div class="mascot-controller">
+        <button class="mascot-btn active" onclick="setMascotPose('stand')">Parado (Stand)</button>
+        <button class="mascot-btn" onclick="setMascotPose('walk')">Processando (Walk)</button>
+        <button class="mascot-btn" onclick="setMascotPose('wave')">Saudação (Wave)</button>
+        <button class="mascot-btn" onclick="setMascotPose('streaming')">Recebendo (Emet)</button>
+        <button class="mascot-btn" onclick="setMascotPose('error')">Falha (Met)</button>
+        <button class="mascot-btn" onclick="setMascotPose('sleep')">Dormindo (Sleep)</button>
+      </div>
+
+      <div class="interactive-golem-frame" id="golem-frame">
+        <img id="golem-interactive-img" src="assets/golem-emet.svg" alt="Mascote Golem" />
+      </div>
+
+      <div class="golem-state-desc" id="golem-desc">
+        <strong>Modo Parado (Stand):</strong> Olhos e inscrição ativos. Pisca a cada 3 segundos e acena cordialmente se não houver comandos.
+      </div>
+
+      <!-- Full Poses Gallery -->
+      <div style="margin-top: 3.5rem; text-align: center; width: 100%;">
+        <h4 style="color: var(--text-main); font-size: 1.15rem; margin-bottom: 0.5rem;">Galeria Completa de Poses (`kli golem`)</h4>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">
+          Representação vetorial exata da matriz 20×10 pixels original do Kli em SVG e PNG de alta resolução.
+        </p>
+        <div style="background: rgba(8, 11, 16, 0.95); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; overflow-x: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+          <img src="assets/golem-gallery.svg" alt="Galeria de Poses do Golem" style="max-width: 100%; min-width: 720px; height: auto; image-rendering: pixelated;" />
+        </div>
+        <div style="margin-top: 1.25rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+          <a href="assets/golem-gallery.png" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.6rem 1.2rem;">🖼️ Abrir PNG Renderizado (1560×320)</a>
+          <a href="assets/golem-gallery.svg" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.6rem 1.2rem;">📐 Abrir SVG Vetorial Puro</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quickstart / Installation -->
+  <section class="section" id="quickstart">
+    <div class="section-header">
+      <span class="section-tag">Rápido de Começar</span>
+      <h2 class="section-title">Do download à primeira stack</h2>
+      <p class="section-subtitle">
+        Baixe o binário, deixe o <code>kli init</code> achar as suas fontes e compare dois modelos lado a lado.
+      </p>
+    </div>
+
+    <div class="quickstart-box">
+      <div class="code-row">
+        <div>
+          <span class="t-prompt">$</span> <span class="t-cmd">mkdir -p ~/.local/bin &amp;&amp; curl -fL "https://github.com/pacmanalx/kli/releases/latest/download/kli-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/x64/;s/aarch64/arm64/')" -o ~/.local/bin/kli &amp;&amp; chmod +x ~/.local/bin/kli</span> <span class="t-dim"># o binário do macOS ou do Linux; ou compile do código com o Bun</span>
+        </div>
+        <button class="copy-btn" data-copy="mkdir -p ~/.local/bin &amp;&amp; curl -fL &quot;https://github.com/pacmanalx/kli/releases/latest/download/kli-$(uname -s | tr &#x27;[:upper:]&#x27; &#x27;[:lower:]&#x27;)-$(uname -m | sed &#x27;s/x86_64/x64/;s/aarch64/arm64/&#x27;)&quot; -o ~/.local/bin/kli &amp;&amp; chmod +x ~/.local/bin/kli">Copiar</button>
+      </div>
+      <div class="code-row">
+        <div>
+          <span class="t-prompt">$</span> <span class="t-cmd">kli init</span> <span class="t-dim"># acha os CLIs, os servidores locais e as chaves e grava a configuração, com stacks</span>
+        </div>
+        <button class="copy-btn" data-copy="kli init">Copiar</button>
+      </div>
+      <div class="code-row">
+        <div>
+          <span class="t-prompt">$</span> <span class="t-cmd">kli check</span> <span class="t-dim"># manda "ok" para cada modelo e mede</span>
+        </div>
+        <button class="copy-btn" data-copy="kli check">Copiar</button>
+      </div>
+      <div class="code-row">
+        <div>
+          <span class="t-prompt">$</span> <span class="t-cmd">kli --stack compare "o que é um golem?"</span> <span class="t-dim"># dois modelos, lado a lado</span>
+        </div>
+        <button class="copy-btn" data-copy="kli --stack compare &quot;o que é um golem?&quot;">Copiar</button>
+      </div>
+      <div class="code-row">
+        <div>
+          <span class="t-prompt">$</span> <span class="t-cmd">kli</span> <span class="t-dim"># a sessão; /model inclui fontes, /stack escolhe uma stack</span>
+        </div>
+        <button class="copy-btn" data-copy="kli">Copiar</button>
+      </div>
+      <p class="t-dim" style="margin-top:12px">Do código: <code>git clone https://github.com/pacmanalx/kli.git &amp;&amp; cd kli &amp;&amp; bun install &amp;&amp; bun run build</code></p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-lore">
+        <strong>Kli (כלי)</strong> quer dizer <em>instrumento</em>, <em>ferramenta</em>, <em>vaso</em>. Na tradição cabalística, os <span class="hebrew">kelim</span> são os vasos preparados para receber e conduzir a luz primordial.
+        <br><br>
+        <span style="color: var(--text-dim); font-size: 0.8rem;">
+          Construído como laboratório de alta precisão para IA. Feito com Bun & TypeScript.
+        </span>
+      </div>
+      <div>
+        <a href="#terminal" class="btn btn-secondary" style="font-size: 0.85rem;">↑ Voltar ao Topo</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // Tab switching
+    function switchTab(index) {
+      document.querySelectorAll('.tab-btn').forEach((tab, i) => {
+        const on = i === index;
+        tab.classList.toggle('active', on);
+        tab.setAttribute('aria-selected', on ? 'true' : 'false');
+        $('tab-' + i).classList.toggle('active', on);
+      });
+    }
+
+    // Copy buttons say they copied
+    document.querySelectorAll('.copy-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(btn.dataset.copy).then(() => {
+          btn.textContent = 'Copiado';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.textContent = 'Copiar';
+            btn.classList.remove('copied');
+          }, 1500);
+        });
+      });
+    });
+
+    // Mascot interactive poses & animations
+    let currentAnimInterval = null;
+
+    const MASCOT_CONFIG = {
+      stand: {
+        frames: ['assets/golem-emet.svg', 'assets/golem-blink.svg'],
+        durations: [2800, 220],
+        glow: 'drop-shadow(0 0 24px rgba(255, 214, 90, 0.45))',
+        desc: "<strong>Modo Parado (Stand):</strong> Olhos e inscrição ativos. Pisca a cada 3s e acena suavemente se não houver digitação por 30s."
+      },
+      walk: {
+        frames: ['assets/golem-walk1.svg', 'assets/golem-walk2.svg'],
+        interval: 220,
+        glow: 'drop-shadow(0 0 22px rgba(255, 214, 90, 0.45))',
+        desc: "<strong>Esperando o Modelo (Walk):</strong> Anda sem sair do lugar alternando passos enquanto a requisição viaja até o provedor ou nó remoto."
+      },
+      wave: {
+        frames: ['assets/golem-wave1.svg', 'assets/golem-wave2.svg'],
+        interval: 320,
+        glow: 'drop-shadow(0 0 26px rgba(255, 214, 90, 0.5))',
+        desc: "<strong>Saudação (Wave):</strong> Dá as boas-vindas ao inicializar o Kli e lembra com simpatia que está pronto para receber comandos."
+      },
+      streaming: {
+        frames: ['assets/golem-writing.svg', 'assets/golem-emet.svg'],
+        interval: 180,
+        glow: 'drop-shadow(0 0 30px rgba(0, 255, 157, 0.65)) drop-shadow(0 0 16px rgba(255, 214, 90, 0.5))',
+        desc: "<strong>Recebendo Tokens (Streaming):</strong> A inscrição acende em alta intensidade letra por letra (א-מ-ת) e o golem vibra em ritmo constante até o final da resposta."
+      },
+      error: {
+        frames: ['assets/golem-collapse.svg', 'assets/golem-met.svg'],
+        once: true,
+        delay: 450,
+        glow: 'drop-shadow(0 0 14px rgba(239, 68, 68, 0.4))',
+        desc: "<strong>Erro ou Parada (Met):</strong> Sem o aleph primordial resta apenas <em>met</em> (מת, 'morto'). O golem recolhe-se inerte até a próxima requisição restaurar a luz."
+      },
+      sleep: {
+        frames: ['assets/golem-asleep.svg'],
+        glow: 'drop-shadow(0 0 8px rgba(100, 116, 139, 0.2))',
+        desc: "<strong>Dormindo (Sleep):</strong> Após 5 minutos sem comandos, os olhos e a inscrição se apagam totalmente economizando ciclos de CPU."
+      }
+    };
+
+    function setMascotPose(poseKey) {
+      if (currentAnimInterval) {
+        clearInterval(currentAnimInterval);
+        clearTimeout(currentAnimInterval);
+        currentAnimInterval = null;
+      }
+
+      const conf = MASCOT_CONFIG[poseKey];
+      if (!conf) return;
+
+      const img = document.getElementById('golem-interactive-img');
+      const desc = document.getElementById('golem-desc');
+      if (!img || !desc) return;
+
+      desc.innerHTML = conf.desc;
+      img.style.filter = conf.glow;
+
+      if (poseKey === 'stand') {
+        let isBlink = false;
+        img.src = conf.frames[0];
+        const loop = () => {
+          isBlink = !isBlink;
+          img.src = isBlink ? conf.frames[1] : conf.frames[0];
+          currentAnimInterval = setTimeout(loop, isBlink ? conf.durations[1] : conf.durations[0]);
+        };
+        currentAnimInterval = setTimeout(loop, conf.durations[0]);
+      } else if (conf.once) {
+        img.src = conf.frames[0];
+        currentAnimInterval = setTimeout(() => {
+          img.src = conf.frames[1];
+        }, conf.delay);
+      } else if (conf.frames.length > 1) {
+        let frameIdx = 0;
+        img.src = conf.frames[0];
+        currentAnimInterval = setInterval(() => {
+          frameIdx = (frameIdx + 1) % conf.frames.length;
+          img.src = conf.frames[frameIdx];
+        }, conf.interval);
+      } else {
+        img.src = conf.frames[0];
+      }
+
+      document.querySelectorAll('.mascot-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('onclick')?.includes(poseKey)) {
+          btn.classList.add('active');
+        }
+      });
+    }
+
+    // Run initial pose
+    setMascotPose('stand');
+
+    // The session tab: the full screen as Kli draws it. The demo plays one turn: the prompt, a Write that asks for
+    // permission, the answer arriving, the measures. The golem in the panel does what it does in the real one.
+    const TUI = {
+      prompt: 'crie soma.py com uma função soma(a, b) que devolve a soma',
+      answer: 'Criei o soma.py com a função soma(a, b), que devolve a + b.',
+      session: 'session 20261031-151212-fc89',
+    };
+    const WALK = ['assets/golem-walk1.svg', 'assets/golem-walk2.svg'];
+    const SPIN = '◐◓◑◒';
+    const ln = (html) => `<div class="ln">${html}</div>`;
+    const PROMPT_LN = ln(` <span class="t-clay">›</span> ${esc(TUI.prompt)}`);
+    const DIFF = (indent) => ln(`${indent}<span class="t-green">1 + def soma(a, b):</span>`) + ln(`${indent}<span class="t-green">2 +     return a + b</span>`);
+    const WROTE =
+      ln(' <span class="t-green">●</span> <span class="t-bold">Write(soma.py)</span>') +
+      ln('   <span class="t-dim">⎿</span> Wrote 2 lines to soma.py') +
+      DIFF('     ');
+    const MEASURES = 'laptop/ollama · qwen3:14b · 7.9s · 2611→74 tokens';
+    const FINAL_CONVO = PROMPT_LN + WROTE + ln(' ' + esc(TUI.answer)) + ln(`<span class="t-dim"> ${MEASURES} · 2 steps</span>`);
+    const INPUT_IDLE =
+      ln(' <span class="t-clay">›</span> <span class="t-dim">ask anything · /help</span>') +
+      ln('<span class="t-dim"> Enter send · Esc/Ctrl+C stop · ! command · /model · /stack · /stats · /new · /status · /help · /exit</span>');
+    const DIALOG =
+      ln(' <span class="t-bold">Create soma.py</span><span class="t-dim"> · Write needs your permission</span>') +
+      DIFF('   ') +
+      ln('') +
+      ln(' <span class="t-bold">Do you want to go ahead?</span>') +
+      ln('') +
+      ln(' <span class="t-clay">❯</span> 1. <span class="t-clay t-strong">Yes</span>') +
+      ln('   <span class="t-dim">2.</span> Yes, allow all edits during this session') +
+      ln('   <span class="t-dim">3.</span> No, and tell Kli what to do differently (esc)') +
+      ln('') +
+      ln(' <span class="t-dim">↑/↓ choose · Enter select · 1-3 jump · Esc back</span>');
+
+    let demoRun = 0;
+    let golemTimer = null;
+    let statusTimer = null;
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    function tuiGolem(frames, ms) {
+      clearTimeout(golemTimer);
+      clearInterval(golemTimer);
+      const img = $('tui-golem');
+      if (frames === 'idle') {
+        // blinks every 3 s
+        img.src = 'assets/golem-emet.svg';
+        const blink = () => {
+          img.src = 'assets/golem-blink.svg';
+          golemTimer = setTimeout(() => {
+            img.src = 'assets/golem-emet.svg';
+            golemTimer = setTimeout(blink, 2800);
+          }, 200);
+        };
+        golemTimer = setTimeout(blink, 2800);
+        return;
+      }
+      let i = 0;
+      img.src = frames[0];
+      golemTimer = setInterval(() => {
+        i = (i + 1) % frames.length;
+        img.src = frames[i];
+      }, ms);
+    }
+
+    function tuiStatus(kind, what) {
+      clearInterval(statusTimer);
+      const since = Date.now();
+      const draw = () => {
+        const secs = ((Date.now() - since) / 1000).toFixed(1) + 's';
+        const spin = SPIN[Math.floor(Date.now() / 120) % SPIN.length];
+        $('tui-status').innerHTML =
+          kind === 'ready' ? '<span class="t-green">●</span> ready'
+          : kind === 'waiting' ? `<span class="t-amber">${spin} waiting for laptop/ollama… ${secs}</span>`
+          : kind === 'answering' ? `<span class="t-clay">▸ laptop/ollama answering… ${secs}</span>`
+          : `<span class="t-amber">? waiting for you: ${esc(what)}</span>`;
+      };
+      draw();
+      if (kind === 'waiting' || kind === 'answering') statusTimer = setInterval(draw, 120);
+    }
+
+    function tuiFinal() {
+      $('tui-convo').innerHTML = FINAL_CONVO;
+      $('tui-bottom').innerHTML = INPUT_IDLE;
+      $('tui-last').textContent = `last ${MEASURES}`;
+      $('tui-session').textContent = `${TUI.session} · 1 prompt · 2685 tokens`;
+      tuiStatus('ready');
+      tuiGolem('idle');
+    }
+
+    async function runSimulatedCli() {
+      const run = ++demoRun;
+      const alive = () => run === demoRun;
+      switchTab(0);
+      $('terminal').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return tuiFinal();
+
+      const convo = $('tui-convo');
+      const bottom = $('tui-bottom');
+      convo.innerHTML = '';
+      bottom.innerHTML = INPUT_IDLE;
+      $('tui-last').textContent = 'no answers yet';
+      $('tui-session').textContent = `${TUI.session} · 0 prompts · 0 tokens`;
+      tuiStatus('ready');
+      tuiGolem(['assets/golem-wave1.svg', 'assets/golem-wave2.svg'], 320);
+      await sleep(1300);
+      if (!alive()) return;
+      tuiGolem('idle');
+
+      for (let i = 1; i <= TUI.prompt.length; i++) {
+        bottom.firstElementChild.innerHTML = ` <span class="t-clay">›</span> ${esc(TUI.prompt.slice(0, i))}<span class="caret">▌</span>`;
+        await sleep(30);
+        if (!alive()) return;
+      }
+      await sleep(350);
+      if (!alive()) return;
+
+      bottom.innerHTML = INPUT_IDLE;
+      convo.innerHTML = PROMPT_LN;
+      tuiStatus('waiting');
+      tuiGolem(WALK, 220);
+      await sleep(1500);
+      if (!alive()) return;
+
+      convo.innerHTML = PROMPT_LN + ln(' <span class="t-amber">●</span> <span class="t-bold">Write(soma.py)</span>');
+      bottom.innerHTML = DIALOG;
+      tuiStatus('asking', 'Create soma.py');
+      tuiGolem('idle');
+      await sleep(2400);
+      if (!alive()) return;
+
+      convo.innerHTML = PROMPT_LN + WROTE;
+      bottom.innerHTML = INPUT_IDLE;
+      tuiStatus('waiting');
+      tuiGolem(WALK, 220);
+      await sleep(900);
+      if (!alive()) return;
+
+      // answering: the golem walks faster while the text arrives
+      tuiStatus('answering');
+      tuiGolem(WALK, 120);
+      const answer = document.createElement('div');
+      answer.className = 'ln';
+      convo.appendChild(answer);
+      const words = TUI.answer.split(' ');
+      for (let i = 1; i <= words.length; i++) {
+        answer.textContent = ' ' + words.slice(0, i).join(' ');
+        await sleep(70);
+        if (!alive()) return;
+      }
+      await sleep(200);
+      if (!alive()) return;
+      tuiFinal();
+    }
+
+    tuiFinal();
+  </script>
+</body>
+</html>
