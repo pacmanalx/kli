@@ -37,6 +37,42 @@ export function parseArguments(text: string): Record<string, unknown> {
   }
 }
 
+const CALL_KEYS = new Set(["name", "arguments", "parameters"]);
+
+/**
+ * Tool calls a model wrote as text instead of as calls, and the text left around them. Either the whole answer is
+ * the call (`{"name": "Bash", "arguments": {…}}`, a list of them, in a ```json block or not), or each call is in
+ * <tool_call> tags, the template's own form, with text around it. Only the names of the tools offered, with nothing
+ * but a name and its arguments: anything else is an answer. 23/11/2026: qwen2.5-coder 14B on Ollama answered
+ * `{"name": "Bash", "arguments": {"command": "bun test"}}`, and the node ended there, at its first step.
+ */
+export function callsInText(text: string, offered: string[]): { calls: ToolCall[]; text: string } | undefined {
+  const body = text.trim();
+  if (!body) return undefined;
+  const tagged = [...body.matchAll(/<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/g)].map((m) => m[1]!);
+  const pieces = tagged.length ? tagged : [/^```(?:json)?\s*\n([\s\S]*?)\n?```$/.exec(body)?.[1] ?? body];
+  const calls: ToolCall[] = [];
+  for (const piece of pieces) {
+    let value: unknown;
+    try {
+      value = JSON.parse(piece);
+    } catch {
+      return undefined;
+    }
+    for (const item of Array.isArray(value) ? value : [value]) {
+      if (!item || typeof item !== "object" || Array.isArray(item) || Object.keys(item).some((k) => !CALL_KEYS.has(k))) return undefined;
+      const { name, arguments: args, parameters } = item as { name?: unknown; arguments?: unknown; parameters?: unknown };
+      if (typeof name !== "string" || !offered.includes(name)) return undefined;
+      const given = args ?? parameters ?? {};
+      const input = typeof given === "string" ? parseArguments(given) : given && typeof given === "object" && !Array.isArray(given) ? (given as Record<string, unknown>) : undefined;
+      if (!input) return undefined;
+      calls.push({ id: `call_${calls.length}`, name, input });
+    }
+  }
+  if (!calls.length) return undefined;
+  return { calls, text: tagged.length ? body.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, "").trim() : "" };
+}
+
 /** A server that does not take tools says so in a 400 (llama-server without --jinja, models without a tool template). */
 const NO_TOOLS = /tool|function|jinja/i;
 
@@ -47,6 +83,8 @@ const NO_TOOLS = /tool|function|jinja/i;
 export class OpenAIProvider implements Provider {
   /** The server refused tools once: from then on it is asked without them. */
   private noTools = false;
+  /** The model wrote a tool call as text once: said on screen that time only. */
+  private wroteCalls = false;
 
   constructor(
     readonly name: string,
@@ -118,6 +156,14 @@ export class OpenAIProvider implements Provider {
       .filter(([, c]) => c.name)
       .map(([index, c]) => ({ id: c.id ?? `call_${index}`, name: c.name, input: parseArguments(c.args) }));
     const thinking = usage?.completion_tokens_details?.reasoning_tokens;
-    return { text, inputTokens: usage?.prompt_tokens, outputTokens: usage?.completion_tokens, ...(thinking && { thinkingTokens: thinking }), ...(toolCalls.length && { toolCalls }) };
+    const counts = { inputTokens: usage?.prompt_tokens, outputTokens: usage?.completion_tokens, ...(thinking && { thinkingTokens: thinking }) };
+    // calls written as text go on as calls, and the screen says so the first time
+    const written = !toolCalls.length && tools?.length ? callsInText(text, tools.map((t) => t.name)) : undefined;
+    if (written) {
+      const notice = this.wroteCalls ? undefined : `${this.name}: the model wrote its tool calls as text; Kli runs them as calls`;
+      this.wroteCalls = true;
+      return { text: written.text, ...counts, toolCalls: written.calls, ...(notice && { notice }) };
+    }
+    return { text, ...counts, ...(toolCalls.length && { toolCalls }) };
   }
 }

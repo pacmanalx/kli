@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from "bun:test";
-import { OpenAIProvider } from "../src/core/providers/openai.ts";
+import { callsInText, OpenAIProvider } from "../src/core/providers/openai.ts";
 import { ProviderError } from "../src/core/types.ts";
 
 let receivedBody: Record<string, unknown> = {};
@@ -9,7 +9,13 @@ const server = Bun.serve({
     const url = new URL(req.url);
     receivedBody = (await req.json()) as Record<string, unknown>;
     if (url.pathname === "/error/v1/chat/completions") return new Response("model not loaded", { status: 503 });
-    const lines = [
+    // a model that writes its tool call as text, in two pieces
+    const written = url.pathname === "/written/v1/chat/completions";
+    const lines = written ? [
+      { choices: [{ delta: { content: '{"name": "Bash", ' } }] },
+      { choices: [{ delta: { content: '"arguments": {"command": "bun test"}}' } }] },
+      { choices: [], usage: { prompt_tokens: 20, completion_tokens: 9 } },
+    ] : [
       { choices: [{ delta: { role: "assistant" } }] },
       { choices: [{ delta: { content: "Hello" } }] },
       { choices: [{ delta: { content: ", world" } }] },
@@ -68,4 +74,41 @@ test("a server's own instructions go at the end of the system message, or make o
     url: "http://100.66.180.64:52415/v1",
     instructions: "/no_think",
   });
+});
+
+test("a tool call written as text goes on as a call when the tool was offered; the screen hears it once", async () => {
+  const p = new OpenAIProvider("fake", { type: "openai", url: `${server.url}written/v1`, model: "m" });
+  const tools = [{ name: "Bash", description: "runs", parameters: { type: "object", properties: {} } }];
+  const first = await p.chat({ messages: [{ role: "user", content: "test it" }], tools });
+  expect(first).toEqual({
+    text: "", inputTokens: 20, outputTokens: 9,
+    toolCalls: [{ id: "call_0", name: "Bash", input: { command: "bun test" } }],
+    notice: "fake: the model wrote its tool calls as text; Kli runs them as calls",
+  });
+  expect((await p.chat({ messages: [{ role: "user", content: "again" }], tools })).notice).toBeUndefined();
+  // with no tools offered, the same text is an answer
+  expect(await p.chat({ messages: [{ role: "user", content: "test it" }] })).toEqual({ text: '{"name": "Bash", "arguments": {"command": "bun test"}}', inputTokens: 20, outputTokens: 9 });
+});
+
+test("what counts as a call written as text: the whole answer, or each one in tool_call tags; anything else is an answer", () => {
+  const offered = ["Bash", "Read"];
+  const bash = { id: "call_0", name: "Bash", input: { command: "ls" } };
+  expect(callsInText('{"name": "Bash", "arguments": {"command": "ls"}}', offered)).toEqual({ calls: [bash], text: "" });
+  expect(callsInText('```json\n{"name": "Bash", "parameters": {"command": "ls"}}\n```', offered)).toEqual({ calls: [bash], text: "" });
+  // arguments as a JSON string, as the API sends them
+  expect(callsInText('{"name": "Bash", "arguments": "{\\"command\\": \\"ls\\"}"}', offered)).toEqual({ calls: [bash], text: "" });
+  expect(callsInText('[{"name": "Bash", "arguments": {"command": "ls"}}, {"name": "Read", "arguments": {"file_path": "a.ts"}}]', offered)?.calls.map((c) => [c.id, c.name])).toEqual([["call_0", "Bash"], ["call_1", "Read"]]);
+  // Qwen's tags, with text around them
+  expect(callsInText('I will list it.\n<tool_call>\n{"name": "Bash", "arguments": {"command": "ls"}}\n</tool_call>', offered)).toEqual({ calls: [bash], text: "I will list it." });
+  for (const answer of [
+    "The tests pass.",
+    'Run this: {"name": "Bash", "arguments": {"command": "ls"}}',
+    '{"name": "Deploy", "arguments": {}}',
+    '{"name": "Bash", "arguments": {"command": "ls"}, "why": "to see"}',
+    '{"name": "Bash", "arguments": ["ls"]}',
+    '{"name": "Bash", "arguments": {"command": "ls"}',
+    '<tool_call>{"name": "Bash", "arguments": {"command": "ls"}</tool_call>',
+    "",
+  ])
+    expect(callsInText(answer, offered)).toBeUndefined();
 });

@@ -204,7 +204,12 @@ um comando e devolve a saída e o código de saída), **BashOutput** e **KillBas
 segundo plano). O modelo só pede; quem executa é o Kli, nesta máquina, mesmo quando o modelo está em outra. O laço: o Kli manda a conversa e a lista de ferramentas, o modelo
 pede uma ou mais, o Kli executa e devolve os resultados, e isso se repete até o modelo responder só com texto, sem
 teto de passos nem de tempo: só o Esc para. Ao parar, cada pedido de ferramenta ainda sem resposta recebe um "not
-run", e a pergunta sai da conversa, para a próxima começar limpa em qualquer provedor. O modelo é orientado a usar ferramentas só quando o pedido é sobre os arquivos da pasta ou
+run", e a pergunta sai da conversa, para a próxima começar limpa em qualquer provedor. Um modelo local que escreve o
+pedido como texto em vez de pedir (`{"name": "Bash", "arguments": {…}}` como a resposta inteira, ou cada pedido entre
+`<tool_call>` e `</tool_call>`) tem o pedido atendido como se tivesse pedido, e a tela avisa uma vez
+(`the model wrote its tool calls as text`). Só vale com o nome de uma ferramenta oferecida e nada além do nome e dos
+argumentos; qualquer outro texto é resposta. (23/11/2026: o qwen2.5-coder 14B no Ollama respondia assim, e o nó acabava
+no primeiro passo, sem ter rodado nada.) O modelo é orientado a usar ferramentas só quando o pedido é sobre os arquivos da pasta ou
 precisa de um comando, e a escrever textos (um resumo, uma carta) direto na resposta. Cada ferramenta aparece na conversa (`● Write(soma.py)` e `⎿ Wrote 16 lines to soma.py`, com a
 diferença) e vai para o rastro.
 
