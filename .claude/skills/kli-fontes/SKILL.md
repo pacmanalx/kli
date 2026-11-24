@@ -41,8 +41,9 @@ Por baixo, há quatro protocolos:
   fechada no fim não pareça falha do ssh.
 - **Servidor visto só no localhost de lá:** entra com `tunnel: true`.
 - **O que o `OpenAIProvider` conserta de um servidor local** (`providers/openai.ts`, 23/11/2026):
-  - **chamada escrita como texto** (`callsInText`): a resposta inteira `{"name", "arguments"}`, ou cada chamada entre
-    `<tool_call>`, com o nome de uma ferramenta oferecida, vira chamada; qualquer outro texto é resposta;
+  - **chamada escrita como texto** (`callsInText`): a resposta inteira `{"name", "arguments"}`, cada chamada entre
+    `<tool_call>`, ou cada uma num bloco ``` quando todo bloco da resposta é chamada, com o nome de uma ferramenta
+    oferecida, vira chamada; qualquer outro texto é resposta;
   - **a janela cheia** (`fullNotice`): uma resposta de 2048 tokens ou mais num servidor sem chave pergunta uma vez ao
     `/api/ps` do Ollama a janela carregada, e avisa uma vez quando a conversa chegou a ela (o Ollama corta o começo
     sem dizer). O Kli não muda a janela: o `/v1` do Ollama ignora `num_ctx`, e o servidor é da pessoa.

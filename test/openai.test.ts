@@ -107,8 +107,14 @@ test("what counts as a call written as text: the whole answer, or each one in to
   expect(callsInText('[{"name": "Bash", "arguments": {"command": "ls"}}, {"name": "Read", "arguments": {"file_path": "a.ts"}}]', offered)?.calls.map((c) => [c.id, c.name])).toEqual([["call_0", "Bash"], ["call_1", "Read"]]);
   // Qwen's tags, with text around them
   expect(callsInText('I will list it.\n<tool_call>\n{"name": "Bash", "arguments": {"command": "ls"}}\n</tool_call>', offered)).toEqual({ calls: [bash], text: "I will list it." });
+  // the fix explained, and the call in a block: every block of the answer is a call
+  expect(callsInText('The discount comes first.\n\n```json\n{"name": "Bash", "arguments": {"command": "ls"}}\n```\n\nThen the tests.', offered)).toEqual({
+    calls: [bash], text: "The discount comes first.\n\n\n\nThen the tests.",
+  });
   for (const answer of [
     "The tests pass.",
+    // a block that is code, next to one that is a call: an answer
+    'Call it so:\n```json\n{"name": "Bash", "arguments": {"command": "ls"}}\n```\nand the code:\n```ts\nconst a = 1;\n```',
     'Run this: {"name": "Bash", "arguments": {"command": "ls"}}',
     '{"name": "Deploy", "arguments": {}}',
     '{"name": "Bash", "arguments": {"command": "ls"}, "why": "to see"}',

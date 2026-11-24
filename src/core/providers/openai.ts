@@ -39,18 +39,24 @@ export function parseArguments(text: string): Record<string, unknown> {
 
 const CALL_KEYS = new Set(["name", "arguments", "parameters"]);
 
+const TAGGED = /<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/g;
+const FENCED = /```[\w-]*[ \t]*\n([\s\S]*?)\n?```/g;
+
 /**
- * Tool calls a model wrote as text instead of as calls, and the text left around them. Either the whole answer is
- * the call (`{"name": "Bash", "arguments": {…}}`, a list of them, in a ```json block or not), or each call is in
- * <tool_call> tags, the template's own form, with text around it. Only the names of the tools offered, with nothing
- * but a name and its arguments: anything else is an answer. 23/11/2026: qwen2.5-coder 14B on Ollama answered
- * `{"name": "Bash", "arguments": {"command": "bun test"}}`, and the node ended there, at its first step.
+ * Tool calls a model wrote as text instead of as calls, and the text left around them. The whole answer is the call
+ * (`{"name": "Bash", "arguments": {…}}`, or a list of them); or each call is in <tool_call> tags, the template's own
+ * form; or each in a ``` block, when every block of the answer is a call. Text around tags or blocks stays as text.
+ * Only the names of the tools offered, with nothing but a name and its arguments: anything else is an answer.
+ * 23/11/2026: qwen2.5-coder 14B on Ollama answered `{"name": "Bash", "arguments": {"command": "bun test"}}`, and the
+ * node ended there, at its first step; with that taken as a call, it explained its fix and put the Edit in a ```json
+ * block, and ended there.
  */
 export function callsInText(text: string, offered: string[]): { calls: ToolCall[]; text: string } | undefined {
   const body = text.trim();
   if (!body) return undefined;
-  const tagged = [...body.matchAll(/<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/g)].map((m) => m[1]!);
-  const pieces = tagged.length ? tagged : [/^```(?:json)?\s*\n([\s\S]*?)\n?```$/.exec(body)?.[1] ?? body];
+  const tagged = [...body.matchAll(TAGGED)];
+  const found = tagged.length ? tagged : [...body.matchAll(FENCED)];
+  const pieces = found.length ? found.map((m) => m[1]!) : [body];
   const calls: ToolCall[] = [];
   for (const piece of pieces) {
     let value: unknown;
@@ -70,7 +76,7 @@ export function callsInText(text: string, offered: string[]): { calls: ToolCall[
     }
   }
   if (!calls.length) return undefined;
-  return { calls, text: tagged.length ? body.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, "").trim() : "" };
+  return { calls, text: found.reduce((left, m) => left.replace(m[0], ""), found.length ? body : "").trim() };
 }
 
 /** A server that does not take tools says so in a 400 (llama-server without --jinja, models without a tool template). */
