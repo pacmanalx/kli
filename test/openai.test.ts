@@ -7,10 +7,17 @@ const server = Bun.serve({
   port: 0,
   async fetch(req) {
     const url = new URL(req.url);
+    // Ollama says the context it loaded each model with
+    if (url.pathname === "/api/ps") return Response.json({ models: [{ name: "qwen3:14b", model: "qwen3:14b", context_length: 4096 }] });
     receivedBody = (await req.json()) as Record<string, unknown>;
     if (url.pathname === "/error/v1/chat/completions") return new Response("model not loaded", { status: 503 });
     // a model that writes its tool call as text, in two pieces
     const written = url.pathname === "/written/v1/chat/completions";
+    if (url.pathname === "/full/v1/chat/completions") {
+      const used = receivedBody.model === "qwen3:14b" ? { prompt_tokens: 3063, completion_tokens: 3401 } : { prompt_tokens: 1500, completion_tokens: 900 };
+      const body = [{ choices: [{ delta: { content: "The fix is…" } }] }, { choices: [], usage: used }].map((l) => `data: ${JSON.stringify(l)}\n\n`).join("") + "data: [DONE]\n\n";
+      return new Response(body, { headers: { "Content-Type": "text/event-stream" } });
+    }
     const lines = written ? [
       { choices: [{ delta: { content: '{"name": "Bash", ' } }] },
       { choices: [{ delta: { content: '"arguments": {"command": "bun test"}}' } }] },
@@ -111,4 +118,14 @@ test("what counts as a call written as text: the whole answer, or each one in to
     "",
   ])
     expect(callsInText(answer, offered)).toBeUndefined();
+});
+
+test("a conversation that reached the context the server keeps is said once: Ollama drops its start without a word", async () => {
+  const p = new OpenAIProvider("mac/ollama", { type: "openai", url: `${server.url}full/v1`, model: "qwen3:14b" });
+  const r = await p.chat({ messages: [{ role: "user", content: "fix it" }] });
+  expect(r.notice).toBe("mac/ollama: the conversation (6464 tokens) reached the 4096 the server keeps for qwen3:14b, and the start of it was dropped; give it more (Ollama: OLLAMA_CONTEXT_LENGTH, or a model with PARAMETER num_ctx)");
+  expect((await p.chat({ messages: [{ role: "user", content: "again" }] })).notice).toBeUndefined();
+  // below the context, or 2048 tokens in all, nothing is said; an API with a key is never asked
+  expect((await new OpenAIProvider("mac/ollama", { type: "openai", url: `${server.url}full/v1`, model: "other" }).chat({ messages: [] })).notice).toBeUndefined();
+  expect((await new OpenAIProvider("api", { type: "openai", url: `${server.url}full/v1`, model: "qwen3:14b", apiKeyEnv: "X_KEY" }).chat({ messages: [] })).notice).toBeUndefined();
 });

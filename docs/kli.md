@@ -176,6 +176,16 @@ provedores:
   modelos dele. Serve para o que o modelo só aceita ali: o Nemotron do cluster exo (local `rosh`, provedor `exo`, porta
   52415) só para de pensar em voz alta com `"instructions": "/no_think"`, porque o exo ignora `enable_thinking` e
   `reasoning_effort` (31/10/2026).
+- **A janela de contexto de um servidor.** O Ollama carrega cada modelo com uma janela pequena (4096 tokens num
+  notebook, mesmo num modelo que aceita 256 mil), e a API compatível com OpenAI, que o Kli usa, não aceita `num_ctx`.
+  Passou dela, o Ollama tira o começo da conversa sem avisar: as instruções e as ferramentas vão embora no meio do
+  trabalho. Quando uma resposta de um servidor local, sem chave, soma 2048 tokens ou mais, o Kli pergunta uma vez ao
+  `/api/ps` com que janela o modelo está carregado; se a conversa chegou a ela, a tela avisa uma vez (`the
+  conversation (6464 tokens) reached the 4096 the server keeps for qwen3:14b…`), e numa stack o aviso vai na linha do
+  nó e no rastro. Para dar mais: `OLLAMA_CONTEXT_LENGTH` no serviço do Ollama, ou um modelo com `PARAMETER num_ctx`
+  (`FROM qwen3:14b` e `PARAMETER num_ctx 16384` num Modelfile, e `ollama create qwen3:14b-16k -f Modelfile`). No
+  llama.cpp a janela é o `-c` do `llama-server`, dividida pelo `--parallel`. (23/11/2026: o qwen3 14B entrou com 3063
+  tokens, pensou mais 3401, perdeu as ferramentas e descreveu a correção em vez de fazê-la.)
 - **Enter no campo Modelo** lista o que o local ou provedor oferece: `/v1/models` (com tamanho e quantização no Ollama
   e no llama.cpp; num cluster exo, só os modelos carregados, com as máquinas em que cada um roda, porque o
   `/v1/models` do exo traz o catálogo inteiro), os Gemini e os modelos de parceiros prontos para chamar (os `-maas`: DeepSeek, GLM, gpt-oss,

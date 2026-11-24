@@ -93,6 +93,8 @@ export interface NodeResult {
   /** `refused`: it needed a permission no one in a stack gives (a command the node may not run, a file outside). */
   tools: { name: string; label: string; ok: boolean; refused?: boolean }[];
   error?: string;
+  /** What its provider said along the way: the context the server keeps was reached, calls written as text… */
+  notice?: string;
   /** An aggregator's: how much of its answer came from each node it got (shares adding up to 100). */
   contributions?: Record<string, number>;
   /** A verifier's: the request's requirements and how each node it judged meets them. */
@@ -331,6 +333,7 @@ export class StackRunner {
       ...(r.outputTokens !== undefined && { outputTokens: r.outputTokens }),
       ...(r.costUsd !== undefined && { costUsd: r.costUsd }),
       ...(r.error && { error: r.error }),
+      ...(r.notice && { notice: r.notice }),
       ...(r.contributions && { contributions: r.contributions }),
       ...(r.verdict && { verdict: { requirements: r.verdict.requirements, judged: r.verdict.judged.map(({ node, adherence, items }) => ({ node, adherence, items })) } }),
       ...(r.rounds && { rounds: r.rounds }),
@@ -510,6 +513,7 @@ export class StackRunner {
         }),
         ...(r.thinkingTokens && { thinkingTokens: r.thinkingTokens }),
         ...(r.costUsd !== undefined && { costUsd: r.costUsd }),
+        ...(r.notice && { notice: r.notice }),
       });
     } catch (e) {
       const ms = Math.round(performance.now() - started);

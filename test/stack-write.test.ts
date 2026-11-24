@@ -82,6 +82,7 @@ function fakes() {
         throw new ProviderError("mac/o", "connection reset");
       }
       if (m.startsWith("write-") && last.role === "user") return { text: "", toolCalls: [{ id: "w1", name: "Write", input: { file_path: "out.txt", content: `${m.slice(6)}\n` } }] };
+      if (m === "noticer") return { text: "noticer done", notice: "mac/o: the conversation (6464 tokens) reached the 4096 the server keeps for noticer" };
       if (m.startsWith("bash-") && last.role === "user") return { text: "", toolCalls: [{ id: "b1", name: "Bash", input: { command: m.slice(5).replaceAll("_", " ") } }] };
       return { text: `${m} done`, inputTokens: 5, outputTokens: 2 };
     },
@@ -569,6 +570,18 @@ test("a refused command hears what runs and the project's check by name; the tes
   const refused = await send("mac/o/bash-make_test");
   expect(refused.node.tools[0]).toMatchObject({ ok: false, refused: true });
   expect(refused.heard).toContain("the ones that start with bun run test, bun test; the project's tests run with bun run test");
+});
+
+test("what a node's provider said goes with the node: on its line, in the result and in the trace", async () => {
+  const t = trace();
+  const runner = new StackRunner(fakes().router, t, "s", { nodes: { n: { model: "mac/o/noticer" } } }, {});
+  const r = await runner.send("fix it");
+  await runner.close();
+  const said = "mac/o: the conversation (6464 tokens) reached the 4096 the server keeps for noticer";
+  expect(r.nodes[0]!.notice).toBe(said);
+  expect(nodeLine(r.nodes[0]!, false)).toEndWith(` · ${said}`);
+  const node = readFileSync(t.file, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l)).find((e) => e.type === "node");
+  expect(node.notice).toBe(said);
 });
 
 test("applying a node's changes is in the trace: the node, its files and its diff", async () => {

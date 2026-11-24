@@ -60,6 +60,8 @@ export type TraceEvent =
       project?: { source?: string; setup?: string; fence?: string; unfenced?: string };
       /** How many times it was refused something no one in a stack can allow (a command, a file outside). */
       refused?: number;
+      /** What its provider said along the way (the server's context reached, calls written as text). */
+      notice?: string;
       content?: string;
     }
   /** The person applied a node's changes to the folder; it goes with the node's tags. */

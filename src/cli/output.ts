@@ -121,7 +121,8 @@ export function nodeLine(r: NodeResult, color: boolean, reason = true): string {
         ? red(r.error ?? "failed", color) + (judged ? dim(` · ${judged}`, color) : "")
         : red("failed", color) + dim(` · ${parts.join(" · ")}`, color)
       : dim(parts.join(" · "), color);
-  return `${mark} ${bold(r.node, color)}  ${dim(model, color)} · ${tail}`;
+  // what the provider said (the server's context reached…) explains an answer that went wrong
+  return `${mark} ${bold(r.node, color)}  ${dim(model, color)} · ${tail}${r.notice ? ` · ${yellow(r.notice, color)}` : ""}`;
 }
 
 /** What a node that writes changed, in a few words: 3 files +40 −5 · check passed (in your folder, when it worked there). */
