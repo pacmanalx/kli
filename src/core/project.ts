@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
-import { writeProblems } from "./stack.ts";
+import { exactOnly } from "./shell.ts";
+import { PLAIN_COMMAND, writeProblems } from "./stack.ts";
 import type { FenceSettings } from "./fence.ts";
 import type { StackConfig } from "./types.ts";
 
@@ -78,6 +79,23 @@ const PY_MARKERS = ["pyproject.toml", "setup.py", "setup.cfg", "pytest.ini", "co
 /** Python test files: test_x.py or x_test.py. */
 const PY_TESTS = /^(test_.*|.*_test)\.py$/;
 
+/** Runtimes that run whatever they are given: alone, as a script's command, they would let any code through. */
+const RUNTIMES = new Set(["node", "bun", "deno", "npx", "bunx", "pnpx", "tsx", "ts-node", "python", "python3", "ruby", "perl", "php"]);
+
+/**
+ * A package script's own command ("bun test", "vitest run", "tsc --noEmit"), when it is one plain command: the script
+ * runs it anyway, and a model that types it, or adds a file or a flag (`bun test test/a.test.ts`), is not refused
+ * (23/11/2026: a 7B model asked for `bun test` four times where only `npm test` ran, and gave up). Nothing that
+ * removes, runs other programs or is a runtime alone: those stay behind the script's name.
+ */
+function scriptCommand(body: string): string | undefined {
+  const command = body.trim();
+  if (!PLAIN_COMMAND.test(command)) return undefined;
+  const words = command.split(" ");
+  if (exactOnly(words[0]!) || (words.length === 1 && RUNTIMES.has(words[0]!))) return undefined;
+  return command;
+}
+
 /** One project the files show: its commands, run from the top of the folder, and the file that showed it. */
 interface Found {
   source: string;
@@ -115,7 +133,9 @@ function detectIn(dir: string, at: string, which: (cmd: string) => string | null
     const script = (name: string) => `${tool} ${tool === "npm" && name === "test" ? "test" : `run ${name}`}`;
     // npm init's test script only says there is none
     const test = scripts.test && !/no test specified/.test(scripts.test) ? script("test") : tool === "bun" && hasTests(dir, /\.(test|spec)\.[cm]?[jt]sx?$/) ? "bun test" : undefined;
-    const run = [...(test ? [test] : []), ...["typecheck", "lint"].filter((s) => scripts[s]).map(script)];
+    // each script, and the command it runs when that is one plain command
+    const own = (name: string) => [script(name), scriptCommand(scripts[name]!)].filter((c): c is string => !!c);
+    const run = [...new Set([...(test ? (scripts.test && test === script("test") ? own("test") : [test]) : []), ...["typecheck", "lint"].filter((s) => scripts[s]).flatMap(own)])];
     return found(lock, tool, { run, ...(test && { check: test }) });
   }
   if (has("go.mod")) return found("go.mod", "go", { run: ["go test", "go vet", "go build"], check: "go test ./..." });

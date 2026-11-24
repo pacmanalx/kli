@@ -401,15 +401,15 @@ const installed = () => "/usr/bin/x";
 test("the project's files say how to check it: its lockfile, go.mod, Cargo.toml, uv or pip", () => {
   const scripts = (s: Record<string, string>) => JSON.stringify({ scripts: s });
   expect(detectCommands(project("bun", { "package.json": scripts({ test: "bun test", typecheck: "tsc" }), "bun.lock": "" }), installed)).toEqual({
-    run: ["bun run test", "bun run typecheck"], check: "bun run test", source: "bun.lock",
+    run: ["bun run test", "bun test", "bun run typecheck", "tsc"], check: "bun run test", source: "bun.lock",
   });
   // a Bun project with no test script still has bun's own runner, when it has test files
   expect(detectCommands(project("bun-files", { "package.json": "{}", "bun.lock": "", "src/a.test.ts": "" }), installed)?.check).toBe("bun test");
   // npm init's test script says there is none: no check
   expect(detectCommands(project("npm", { "package.json": scripts({ test: 'echo "Error: no test specified" && exit 1', lint: "eslint ." }), "package-lock.json": "" }), installed)).toEqual({
-    run: ["npm run lint"], source: "package-lock.json",
+    run: ["npm run lint", "eslint ."], source: "package-lock.json",
   });
-  expect(detectCommands(project("pnpm", { "package.json": scripts({ test: "vitest" }), "pnpm-lock.yaml": "" }), installed)).toEqual({ run: ["pnpm run test"], check: "pnpm run test", source: "pnpm-lock.yaml" });
+  expect(detectCommands(project("pnpm", { "package.json": scripts({ test: "vitest" }), "pnpm-lock.yaml": "" }), installed)).toEqual({ run: ["pnpm run test", "vitest"], check: "pnpm run test", source: "pnpm-lock.yaml" });
   expect(detectCommands(project("go", { "go.mod": "module x" }), installed)).toMatchObject({ check: "go test ./...", source: "go.mod" });
   expect(detectCommands(project("rust", { "Cargo.toml": "" }), installed)).toMatchObject({ check: "cargo test" });
   expect(detectCommands(project("uv", { "uv.lock": "", "tests/test_a.py": "" }), installed)).toMatchObject({ check: "uv run pytest" });
@@ -431,23 +431,32 @@ test("the project's files say how to check it: its lockfile, go.mod, Cargo.toml,
     "docs/x.md": "",
   });
   expect(detectCommands(mono, installed)).toEqual({
-    run: ["dotnet test", "dotnet build", "npm run lint"],
+    run: ["dotnet test", "dotnet build", "npm run lint", "oxlint"],
     check: "cd backend && dotnet test",
     source: "backend/Api.slnx + frontend/package-lock.json",
   });
   // one of them without its tool: the other still counts, and the screen says why the first does not
   expect(detectCommands(mono, (c) => (c === "dotnet" ? null : "/usr/bin/x"))).toEqual({
-    run: ["npm run lint"], source: "backend/Api.slnx, but dotnet is not installed + frontend/package-lock.json",
+    run: ["npm run lint", "oxlint"], source: "backend/Api.slnx, but dotnet is not installed + frontend/package-lock.json",
   });
+});
+
+test("a script's own command runs too, when it is one plain command: never one that removes, runs others or is a runtime alone", () => {
+  const run = (test: string) => detectCommands(project(`script-${test.replace(/\W+/g, "-")}`, { "package.json": JSON.stringify({ scripts: { test } }), "package-lock.json": "" }), installed)!.run;
+  expect(run("jest --ci")).toEqual(["npm test", "jest --ci"]);
+  expect(run("node --test")).toEqual(["npm test", "node --test"]);
+  expect(run("vitest run")).toEqual(["npm test", "vitest run"]);
+  for (const kept of ["node", "bun", "npx", "sh test.sh", "rm -rf dist", "NODE_ENV=test jest", "jest && echo ok", "tsc; jest", "jest > out.txt", "jest $ARGS", "jest 'a b'"])
+    expect(run(kept)).toEqual(["npm test"]);
 });
 
 test("the project's .kli/write.json comes first, then the stack, then the files; the allowed commands add up", () => {
   const root = project("declared", { "package.json": JSON.stringify({ scripts: { test: "bun test" } }), "bun.lock": "", ".kli/write.json": JSON.stringify({ check: "make check", run: ["make check"] }) });
   expect(projectCommands([root], { run: ["make lint"] }, installed)).toEqual({
-    check: "make check", run: ["make check", "make lint", "bun run test"], source: ".kli/write.json + the stack + bun.lock",
+    check: "make check", run: ["make check", "make lint", "bun run test", "bun test"], source: ".kli/write.json + the stack + bun.lock",
   });
   // an old setup says nothing: nothing is set up
-  expect(projectCommands([root], { setup: "make deps" }, installed)).toEqual({ check: "make check", run: ["make check", "bun run test"], source: ".kli/write.json + bun.lock" });
+  expect(projectCommands([root], { setup: "make deps" }, installed)).toEqual({ check: "make check", run: ["make check", "bun run test", "bun test"], source: ".kli/write.json + bun.lock" });
   expect(projectCommands([project("nothing", { "README.md": "" })], undefined, installed)).toEqual({ run: [] });
   // the declaration may be at the top of the repository, when Kli runs in a folder below
   const top = project("top", { ".kli/write.json": JSON.stringify({ check: "make it" }), "app/x.txt": "" });
@@ -539,6 +548,27 @@ test("a command no one in a stack can allow is counted as refused, on the node's
   expect(nodeLine(r.nodes[0]!, false)).toContain("1 tool (1 failed, 1 refused)");
   const node = readFileSync(t.file, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l)).find((e) => e.type === "node");
   expect(node.refused).toBe(1);
+});
+
+test("a refused command hears what runs and the project's check by name; the test script's own command runs", async () => {
+  const folder = repo("script-own");
+  writeFileSync(join(folder, "package.json"), JSON.stringify({ scripts: { test: "bun test" } }));
+  writeFileSync(join(folder, "bun.lock"), "");
+  const send = async (model: string) => {
+    const { router, calls } = fakes();
+    const runner = new StackRunner(router, trace(), "s", { nodes: { n: { model, tools: "write" } } }, { root: folder });
+    const r = await runner.send("test it");
+    await runner.close();
+    return { node: r.nodes[0]!, heard: calls.at(-1)!.request.messages.filter((m) => m.role === "tool").map((m) => String(m.content)).join("\n") };
+  };
+  // the script's own command, as the model types it, with a flag: it runs (and finds no tests here)
+  const own = await send("mac/o/bash-bun_test_--bail");
+  expect(own.node.tools[0]).toMatchObject({ label: "Bash(bun test --bail)" });
+  expect(own.node.tools[0]!.refused).toBeUndefined();
+  expect(own.heard).not.toContain("Not allowed");
+  const refused = await send("mac/o/bash-make_test");
+  expect(refused.node.tools[0]).toMatchObject({ ok: false, refused: true });
+  expect(refused.heard).toContain("the ones that start with bun run test, bun test; the project's tests run with bun run test");
 });
 
 test("applying a node's changes is in the trace: the node, its files and its diff", async () => {

@@ -170,6 +170,10 @@ const EXACT = new Set([
   ..."eval exec source . xargs env nohup nice timeout watch command builtin time find sh bash zsh fish dash ssh scp sftp osascript".split(" "),
 ]);
 const ASSIGNMENT = /^[A-Za-z_]\w*=/;
+
+/** A first word a rule allows only exactly: a program that removes, runs others or leaves the machine, or a NAME=value. */
+export const exactOnly = (word: string): boolean => EXACT.has(word) || ASSIGNMENT.test(word);
+
 /** A word that names a subcommand or a file of the project: no flags, no ~, no absolute path, no ".." */
 const PLAIN = /^(?!.*\.\.)[\w@+.][\w.:@+\/-]*$/;
 const MAX_PREFIX = 3;

@@ -570,7 +570,13 @@ lado a lado**, para comparar modelos e as ferramentas que eles chamam.
     (os nós rodam juntos e não há a quem perguntar). Comandos: os que só leem, e os comandos do projeto (os testes,
     o typecheck; cada um libera os que começam como ele: `bun run test` libera `bun run test x`); qualquer outro é
     recusado, o nó é avisado, e a linha dele conta as recusas (`9 tools (2 failed, 1 refused)`): uma resposta sem os
-    testes pode ser uma recusa, não preguiça do modelo. Um CLI (Claude Code, OpenCode) roda como agente onde o nó
+    testes pode ser uma recusa, não preguiça do modelo. A recusa repete o que roda ali e diz com que comando os
+    testes rodam (`the project's tests run with npm test`), e a nota do nó diz o mesmo desde o começo. Do
+    `package.json` vale também o comando que o script roda, se for um comando simples: com `"test": "bun test"`, o
+    `bun test test/a.test.ts` passa como o `npm test` passaria. Não vale um script com `&&`, `;`, `|`, `$`, aspas ou
+    redirecionamento, nem um que remove ou roda outros programas (`rm`, `sh`, `NOME=valor`…), nem um runtime sozinho
+    (`node`, `bun`, `npx`): esses ficam atrás do nome do script. (23/11/2026: um modelo de 7B pediu `bun test` quatro
+    vezes onde só o `npm test` rodava, os mesmos testes, e desistiu pedindo que a pessoa rodasse.) Um CLI (Claude Code, OpenCode) roda como agente onde o nó
     trabalha, com as permissões dele. Um CLI de outra máquina roda isolado e não grava.
   - **Sem limite num nó.** Nenhum nó tem tempo-limite nem teto de passos, pelo laço do Kli (o Gemini, um modelo
     local) ou por um CLI: ele trabalha até o modelo responder, ou até você apertar Esc, que para todos os nós
@@ -614,9 +620,9 @@ lado a lado**, para comparar modelos e as ferramentas que eles chamam.
 
        | Arquivo | Checagem (e comandos liberados) |
        |---|---|
-       | `bun.lock` | o script `test` (`bun run test`), ou `bun test` se houver arquivos de teste; mais `typecheck` e `lint` |
-       | `pnpm-lock.yaml`, `yarn.lock` | o script `test`; mais `typecheck` e `lint` |
-       | `package-lock.json` (ou só `package.json`) | `npm test`, se o script não for o vazio do `npm init`; mais `typecheck` e `lint` |
+       | `bun.lock` | o script `test` (`bun run test`), ou `bun test` se houver arquivos de teste; mais `typecheck` e `lint`; de cada script, também o comando que ele roda, se for simples |
+       | `pnpm-lock.yaml`, `yarn.lock` | o script `test`; mais `typecheck` e `lint`; de cada script, também o comando que ele roda, se for simples |
+       | `package-lock.json` (ou só `package.json`) | `npm test`, se o script não for o vazio do `npm init`; mais `typecheck` e `lint`; de cada script, também o comando que ele roda, se for simples |
        | `go.mod` | `go test ./...` (`go vet`, `go build`) |
        | `Cargo.toml` | `cargo test` (`cargo check`, `cargo build`) |
        | `*.sln`, `*.slnx`, `*.csproj` | `dotnet test`, se houver um projeto de testes, senão `dotnet build` (`dotnet test`, `dotnet build`) |
