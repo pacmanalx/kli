@@ -221,7 +221,11 @@ pedido atendido como se tivesse pedido, o texto em volta fica como texto, e a te
 (`the model wrote its tool calls as text`). Só vale com o nome de uma ferramenta oferecida e nada além do nome e dos
 argumentos; qualquer outro texto é resposta, e um bloco de código ao lado de um pedido deixa tudo como resposta.
 (23/11/2026: o qwen2.5-coder 14B no Ollama respondia assim, e o nó acabava no primeiro passo, sem ter rodado nada;
-depois, explicava a correção e punha o `Edit` num bloco ```` ```json ````.) O modelo é orientado a usar ferramentas só quando o pedido é sobre os arquivos da pasta ou
+depois, explicava a correção e punha o `Edit` num bloco ```` ```json ````.) Um `Edit` cujo trecho só difere do
+arquivo nos espaços (a indentação, espaços entre palavras) não é aplicado, como antes, mas o erro traz as linhas do
+arquivo exatamente como estão, entre `<<<` e `>>>`, para o modelo copiar; se há mais de um lugar assim, o erro é o de
+sempre. (23/11/2026: o gpt-oss 20B lia `    15\t  return`, tomava o recuo do número pelo do código, mandava quatro
+espaços onde o arquivo tinha dois, e repetiu o mesmo `Edit` doze vezes.) O modelo é orientado a usar ferramentas só quando o pedido é sobre os arquivos da pasta ou
 precisa de um comando, e a escrever textos (um resumo, uma carta) direto na resposta. Cada ferramenta aparece na conversa (`● Write(soma.py)` e `⎿ Wrote 16 lines to soma.py`, com a
 diferença) e vai para o rastro.
 

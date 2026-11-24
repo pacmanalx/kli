@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { diffCount, lineDiff } from "../src/core/diff.ts";
-import { Workspace, type Answer, type PermissionRequest } from "../src/core/tools.ts";
+import { sameButSpaces, Workspace, type Answer, type PermissionRequest } from "../src/core/tools.ts";
 
 const base = mkdtempSync(join(tmpdir(), "kli-tools-"));
 afterAll(() => rmSync(base, { recursive: true, force: true }));
@@ -66,6 +66,33 @@ test("Edit wants old_string once (or replace_all), exactly", async () => {
   const r = await ws.run(call("Edit", { file_path: "d.txt", old_string: "x = 1", new_string: "x = 2", replace_all: true }));
   expect(r.ok).toBe(true);
   expect(readFileSync(join(root, "d.txt"), "utf8")).toBe("x = 2\nx = 2\n");
+});
+
+test("an old_string that differs only in spaces: the file's lines, exactly, to copy; the file stays as it was", async () => {
+  const { root, ws } = workspace(["yes"]);
+  const file = "export function total(a: number) {\n  const d = a * 0.1;\n  return a - d;\n}\n";
+  writeFileSync(join(root, "p.ts"), file);
+  await ws.run(call("Read", { file_path: "p.ts" }));
+  // the model's indentation: four spaces where the file has two (23/11/2026)
+  const r = await ws.run(call("Edit", { file_path: "p.ts", old_string: "const d = a * 0.1;\n    return a - d;", new_string: "const d = a * 0.2;\n    return a - d;" }));
+  expect(r).toMatchObject({ ok: false, summary: "text not found (spaces differ)" });
+  expect(r.output).toContain("Lines 2-3 of the file are, exactly, between the lines <<< and >>>:\n<<<\n  const d = a * 0.1;\n  return a - d;\n>>>");
+  expect(readFileSync(join(root, "p.ts"), "utf8")).toBe(file);
+  // a text that is not there at all says what it always said
+  expect((await ws.run(call("Edit", { file_path: "p.ts", old_string: "return b;", new_string: "x" }))).summary).toBe("text not found");
+});
+
+test("the place that differs only in spaces: one, or none at all", () => {
+  const file = "a {\n  x = 1;\n  y = 2;\n}\nb {\n  x = 1;\n  y = 3;\n}";
+  expect(sameButSpaces(file, "x = 1;\n    y = 3;")).toEqual({ from: 6, to: 7, text: "  x = 1;\n  y = 3;" });
+  // in the middle of the file's first line, to the middle of its last
+  expect(sameButSpaces(file, "a {\n x  =  1;\n  y")).toEqual({ from: 1, to: 3, text: "a {\n  x = 1;\n  y = 2;" });
+  expect(sameButSpaces(file, "{\n x  =  1;\n  y")).toBeUndefined();
+  expect(sameButSpaces(file, "y  =  3;")).toEqual({ from: 7, to: 7, text: "  y = 3;" });
+  // twice the same: the model must say which
+  expect(sameButSpaces(file, "x = 1;\n   y")).toBeUndefined();
+  expect(sameButSpaces(file, "z = 9;")).toBeUndefined();
+  expect(sameButSpaces(file, "  \n ")).toBeUndefined();
 });
 
 test("no: nothing is written and the turn is told to stop; outside the folder always asks", async () => {
