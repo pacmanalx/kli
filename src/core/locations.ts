@@ -5,7 +5,7 @@ import { ConfigError, type Config, type LocationConfig, type MachineLocation, ty
 
 /**
  * A model, named the way the person sees it: location → provider → model. On a machine the provider is one of its
- * servers or CLIs ("mac/ollama/lfm3", "aron/claude/sonnet"). On an API the provider is whoever made the model, the
+ * servers or CLIs ("mac/ollama/lfm3", "gpubox/claude/sonnet"). On an API the provider is whoever made the model, the
  * first part of the API's own id ("vertex/deepseek-ai/deepseek-v4.1-flash-maas"); a model with no maker in its id is
  * just "anthropic/claude-sonnet-5-5".
  */

@@ -3,7 +3,7 @@ import { applyStackEvent, comparisonRows, stackRows, stackView, verdictRows } fr
 import type { NodeResult } from "../src/core/stack-run.ts";
 import type { StackConfig } from "../src/core/types.ts";
 
-const compare: StackConfig = { nodes: { gibbor: { model: "gibbor/ollama/lfm3" }, aron: { model: "aron/llama.cpp/qwen2.5-7b" } } };
+const compare: StackConfig = { nodes: { gpubox: { model: "gpubox/ollama/lfm3" }, desk: { model: "desk/llama.cpp/qwen2.5-7b" } } };
 const review: StackConfig = { nodes: { a: { model: "m/a" }, b: { model: "m/b" }, junta: { model: "m/j", from: ["a", "b"] } } };
 const done = (node: string, model: string, text: string, extra: Partial<NodeResult> = {}): NodeResult => ({
   node,
@@ -40,16 +40,16 @@ test("the tree fills in as the nodes work: waiting, at work, done", () => {
 
 test("between tools a node shows how many it used and the last one, not a plain wait", () => {
   const view = stackView("compara", compare, 0);
-  applyStackEvent(view, { type: "start", node: "gibbor", model: "gibbor/ollama/lfm3" }, 0);
+  applyStackEvent(view, { type: "start", node: "gpubox", model: "gpubox/ollama/lfm3" }, 0);
   // a CLI agent's Read starts and ends at once (agy): what stays in sight is that it was done
   for (const [id, label] of [["1", "Read(a.cs)"], ["2", "Edit(a.cs)"]] as const) {
-    applyStackEvent(view, { type: "tool", node: "gibbor", event: { phase: "start", call: { id, name: "x", input: {} }, label } }, 0);
-    applyStackEvent(view, { type: "tool", node: "gibbor", event: { phase: "output", call: { id, name: "x", input: {} }, label, output: "…" } }, 0);
-    applyStackEvent(view, { type: "tool", node: "gibbor", event: { phase: "end", call: { id, name: "x", input: {} }, label, result: { ok: true, output: "", summary: "" } } }, 0);
+    applyStackEvent(view, { type: "tool", node: "gpubox", event: { phase: "start", call: { id, name: "x", input: {} }, label } }, 0);
+    applyStackEvent(view, { type: "tool", node: "gpubox", event: { phase: "output", call: { id, name: "x", input: {} }, label, output: "…" } }, 0);
+    applyStackEvent(view, { type: "tool", node: "gpubox", event: { phase: "end", call: { id, name: "x", input: {} }, label, result: { ok: true, output: "", summary: "" } } }, 0);
   }
-  expect(stackRows(view, 120, 30_000, false)[1]).toMatch(/gibbor  gibbor\/ollama\/lfm3 · 30s · 2 tools · last Edit\(a\.cs\)$/);
+  expect(stackRows(view, 120, 30_000, false)[1]).toMatch(/gpubox  gpubox\/ollama\/lfm3 · 30s · 2 tools · last Edit\(a\.cs\)$/);
   // long after its last step, with nothing running, it is said to be quiet
-  expect(stackRows(view, 120, 400_000, false)[1]).toMatch(/gibbor  gibbor\/ollama\/lfm3 · 6m ?40s · 2 tools · quiet for 6m ?40s · last Edit\(a\.cs\)$/);
+  expect(stackRows(view, 120, 400_000, false)[1]).toMatch(/gpubox  gpubox\/ollama\/lfm3 · 6m ?40s · 2 tools · quiet for 6m ?40s · last Edit\(a\.cs\)$/);
 });
 
 test("while it runs, a node's line says how it goes: what it read, its first edit, and how long it has been quiet", () => {
@@ -88,15 +88,15 @@ test("while it runs, a node's line says how it goes: what it read, its first edi
 
 test("while it runs, the tree stays in sight: each answer shows its last lines in the room left", () => {
   const view = stackView("compara", compare, 0);
-  for (const n of ["gibbor", "aron"]) applyStackEvent(view, { type: "start", node: n, model: n }, 0);
+  for (const n of ["gpubox", "desk"]) applyStackEvent(view, { type: "start", node: n, model: n }, 0);
   const long = Array.from({ length: 80 }, (_, i) => `linha ${i + 1}`).join("\n");
-  applyStackEvent(view, { type: "delta", node: "gibbor", text: long }, 0);
-  applyStackEvent(view, { type: "delta", node: "aron", text: "curta e parada" }, 0);
+  applyStackEvent(view, { type: "delta", node: "gpubox", text: long }, 0);
+  applyStackEvent(view, { type: "delta", node: "desk", text: "curta e parada" }, 0);
   const rows = stackRows(view, 120, 1000, false, 20);
   expect(rows.length).toBeLessThanOrEqual(20);
   // the tree first, as without a room
-  expect(rows[1]).toContain("gibbor");
-  expect(rows[2]).toContain("aron");
+  expect(rows[1]).toContain("gpubox");
+  expect(rows[2]).toContain("desk");
   // the long one shows its end, saying how much came before; the short one is still there, next to it
   const body = rows.join("\n");
   expect(body).toContain("linha 80");
@@ -169,10 +169,10 @@ test("one answer reads like the model's; two go side by side, each under its nod
   expect(stackRows(one, 80, 0, false).slice(-1)).toEqual([" A resposta juntada."]);
 
   const two = stackView("compara", compare, 0);
-  applyStackEvent(two, { type: "delta", node: "gibbor", text: "25% de 80 é 20." }, 0);
+  applyStackEvent(two, { type: "delta", node: "gpubox", text: "25% de 80 é 20." }, 0);
   const rows = stackRows(two, 100, 0, false);
-  const title = rows.findIndex((r) => r.includes("gibbor · gibbor/ollama/lfm3"));
-  expect(rows[title]).toMatch(/^ gibbor · gibbor\/ollama\/lfm3 +│ aron · aron\/llama\.cpp\/qwen2\.5-7b$/);
+  const title = rows.findIndex((r) => r.includes("gpubox · gpubox/ollama/lfm3"));
+  expect(rows[title]).toMatch(/^ gpubox · gpubox\/ollama\/lfm3 +│ desk · desk\/llama\.cpp\/qwen2\.5-7b$/);
   // the one still waiting shows it is on its way
   expect(rows[title + 1]).toMatch(/^ 25% de 80 é 20\. +│ …$/);
   expect(rows[title]!.indexOf("│")).toBe(rows[title + 1]!.indexOf("│"));
@@ -180,17 +180,17 @@ test("one answer reads like the model's; two go side by side, each under its nod
 
 test("too narrow for columns: one answer under the other", () => {
   const two = stackView("compara", compare, 0);
-  applyStackEvent(two, { type: "end", node: "aron", result: done("aron", "aron/llama.cpp/qwen2.5-7b", "6") }, 0);
+  applyStackEvent(two, { type: "end", node: "desk", result: done("desk", "desk/llama.cpp/qwen2.5-7b", "6") }, 0);
   const rows = stackRows(two, 50, 0, false);
-  expect(rows.filter((r) => r.startsWith(" ── "))).toEqual([" ── gibbor · gibbor/ollama/lfm3 ──", " ── aron · aron/llama.cpp/qwen2.5-7b ──"]);
+  expect(rows.filter((r) => r.startsWith(" ── "))).toEqual([" ── gpubox · gpubox/ollama/lfm3 ──", " ── desk · desk/llama.cpp/qwen2.5-7b ──"]);
   expect(rows.at(-1)).toBe(" 6");
 });
 
 test("once done, a table compares the answers: time, first text, tokens, speed, tools, steps", () => {
-  const a = done("gibbor", "gibbor/ollama/lfm3", "20");
-  const b = done("aron", "aron/llama.cpp/qwen2.5-7b", "6", { ms: 18_500, firstTokenMs: 17_500, tools: [{ name: "Bash", label: "Bash(ls)", ok: true }, { name: "Bash", label: "Bash(x)", ok: false }] });
+  const a = done("gpubox", "gpubox/ollama/lfm3", "20");
+  const b = done("desk", "desk/llama.cpp/qwen2.5-7b", "6", { ms: 18_500, firstTokenMs: 17_500, tools: [{ name: "Bash", label: "Bash(ls)", ok: true }, { name: "Bash", label: "Bash(x)", ok: false }] });
   expect(comparisonRows([a, b], 100, false)).toEqual([
-    "              gibbor       aron",
+    "              gpubox       desk",
     " status       ✓ answered   ✓ answered",
     " time         6.3s         18.5s",
     " first text   4.8s         17.5s",
@@ -209,9 +209,9 @@ test("once done, a table compares the answers: time, first text, tokens, speed, 
 
 test("an answer that did not come says why, in its place", () => {
   const view = stackView("compara", compare, 0);
-  applyStackEvent(view, { type: "end", node: "aron", result: { ...done("aron", "aron/llama.cpp/qwen2.5-7b", ""), status: "failed", error: "aron/llama.cpp: cannot connect" } }, 0);
+  applyStackEvent(view, { type: "end", node: "desk", result: { ...done("desk", "desk/llama.cpp/qwen2.5-7b", ""), status: "failed", error: "desk/llama.cpp: cannot connect" } }, 0);
   const rows = stackRows(view, 100, 0, false);
-  expect(rows.some((r) => r.includes("│ ✕ aron/llama.cpp: cannot connect"))).toBe(true);
+  expect(rows.some((r) => r.includes("│ ✕ desk/llama.cpp: cannot connect"))).toBe(true);
 });
 
 test("why a node failed or was skipped is under it in the tree, whole: the screen no longer cuts it off", () => {
@@ -230,8 +230,8 @@ test("why a node failed or was skipped is under it in the tree, whole: the scree
 
 test("an answer cut short keeps what had come, with the mark under it", () => {
   const view = stackView("compara", compare, 0);
-  applyStackEvent(view, { type: "delta", node: "gibbor", text: "O computador nasceu" }, 0);
-  applyStackEvent(view, { type: "end", node: "gibbor", result: { ...done("gibbor", "gibbor/ollama/lfm3", ""), status: "interrupted" } }, 0);
+  applyStackEvent(view, { type: "delta", node: "gpubox", text: "O computador nasceu" }, 0);
+  applyStackEvent(view, { type: "end", node: "gpubox", result: { ...done("gpubox", "gpubox/ollama/lfm3", ""), status: "interrupted" } }, 0);
   const rows = stackRows(view, 100, 0, false);
   const at = rows.findIndex((r) => r.startsWith(" O computador nasceu"));
   expect(rows[at + 1]).toMatch(/^ ■ interrupted +│/);
@@ -242,47 +242,47 @@ test("a verdict: requirements down the side, the judged answers across, adherenc
     requirements: ["explica o que é um golem", "em duas frases"],
     judged: [
       { node: "junta", items: ["met", "met"] as const, adherence: 100 },
-      { node: "gibbor", items: ["met", "missing"] as const, adherence: 50, note: "escreveu quatro frases" },
-      { node: "aron", items: ["met", "partial"] as const, adherence: 75 },
+      { node: "gpubox", items: ["met", "missing"] as const, adherence: 50, note: "escreveu quatro frases" },
+      { node: "desk", items: ["met", "partial"] as const, adherence: 75 },
     ],
   };
   const rows = verdictRows({ requirements: verdict.requirements, judged: verdict.judged.map((j) => ({ ...j, items: [...j.items] })) }, "v · vertex/google/gemini-3.5-flash", ["junta"], 80, false);
   expect(rows).toEqual([
     " ◇ adherence to the request · judged by v · vertex/google/gemini-3.5-flash",
-    "                                             junta      gibbor     aron",
+    "                                             junta      gpubox     desk",
     " 1. explica o que é um golem                 ✓          ✓          ✓",
     " 2. em duas frases                           ✓          ✕          ~",
     " adherence                                   100/100    50/100     75/100",
-    " junta: +25 over the best of the others (aron 75)",
-    " gibbor: escreveu quatro frases",
+    " junta: +25 over the best of the others (desk 75)",
+    " gpubox: escreveu quatro frases",
   ]);
 });
 
 test("side by side, the comparison gets each answer's adherence when a verifier judged them", () => {
-  const a = done("gibbor", "gibbor/ollama/lfm3", "20");
-  const b = done("aron", "aron/llama.cpp/qwen2.5-7b", "6");
-  const rows = comparisonRows([a, b], 100, false, { gibbor: 100, aron: 0 });
-  expect(rows.slice(0, 3)).toEqual(["              gibbor       aron", " status       ✓ answered   ✓ answered", " adherence    100/100      0/100"]);
+  const a = done("gpubox", "gpubox/ollama/lfm3", "20");
+  const b = done("desk", "desk/llama.cpp/qwen2.5-7b", "6");
+  const rows = comparisonRows([a, b], 100, false, { gpubox: 100, desk: 0 });
+  expect(rows.slice(0, 3)).toEqual(["              gpubox       desk", " status       ✓ answered   ✓ answered", " adherence    100/100      0/100"]);
 });
 
 test("a node waiting for the person shows the answers to choose from, by letter, side by side; then who chose and why", () => {
-  const stack: StackConfig = { nodes: { gibbor: { model: "gibbor/ollama/lfm3" }, aron: { model: "aron/llama.cpp/qwen2.5-7b" }, escolha: { model: "m/c", role: "choose", from: ["gibbor", "aron"], by: ["person", "model"] } } };
+  const stack: StackConfig = { nodes: { gpubox: { model: "gpubox/ollama/lfm3" }, desk: { model: "desk/llama.cpp/qwen2.5-7b" }, escolha: { model: "m/c", role: "choose", from: ["gpubox", "desk"], by: ["person", "model"] } } };
   const view = stackView("escolhe", stack, 0);
   expect(view.outputs).toEqual(["escolha"]);
-  applyStackEvent(view, { type: "end", node: "gibbor", result: done("gibbor", "gibbor/ollama/lfm3", "Claro. - um - dois - três") }, 0);
-  applyStackEvent(view, { type: "end", node: "aron", result: done("aron", "aron/llama.cpp/qwen2.5-7b", "- um\n- dois\n- três") }, 0);
+  applyStackEvent(view, { type: "end", node: "gpubox", result: done("gpubox", "gpubox/ollama/lfm3", "Claro. - um - dois - três") }, 0);
+  applyStackEvent(view, { type: "end", node: "desk", result: done("desk", "desk/llama.cpp/qwen2.5-7b", "- um\n- dois\n- três") }, 0);
   applyStackEvent(view, { type: "start", node: "escolha", model: "m/c" }, 0);
-  applyStackEvent(view, { type: "asking", node: "escolha", options: [{ label: "A", node: "gibbor" }, { label: "B", node: "aron" }] }, 0);
+  applyStackEvent(view, { type: "asking", node: "escolha", options: [{ label: "A", node: "gpubox" }, { label: "B", node: "desk" }] }, 0);
   const rows = stackRows(view, 100, 0, false);
   expect(rows.some((r) => r === " └ ◐ escolha  m/c · 0.0s · waiting for you to choose")).toBe(true);
   const ask = rows.indexOf(" ? escolha: choose the answer · the number below picks it");
-  expect(rows[ask + 1]).toMatch(/^ A · gibbor · gibbor\/ollama\/lfm3 +│ B · aron · aron\/llama\.cpp\/qwen2\.5-7b$/);
+  expect(rows[ask + 1]).toMatch(/^ A · gpubox · gpubox\/ollama\/lfm3 +│ B · desk · desk\/llama\.cpp\/qwen2\.5-7b$/);
   expect(rows[ask + 2]).toMatch(/^ Claro\. - um - dois - três +│ - um$/);
-  const chosen = { ...done("escolha", "m/c", "- um\n- dois\n- três"), role: "choose" as const, choice: { node: "aron", label: "B", by: "person" as const, passed: [] as string[] } };
+  const chosen = { ...done("escolha", "m/c", "- um\n- dois\n- três"), role: "choose" as const, choice: { node: "desk", label: "B", by: "person" as const, passed: [] as string[] } };
   applyStackEvent(view, { type: "delta", node: "escolha", text: "- um\n- dois\n- três" }, 0);
-  applyStackEvent(view, { type: "end", node: "escolha", result: { ...chosen, choice: { node: "aron", label: "B", by: "model", why: "segue o formato", passed: ["person: did not choose"] } } }, 0);
+  applyStackEvent(view, { type: "end", node: "escolha", result: { ...chosen, choice: { node: "desk", label: "B", by: "model", why: "segue o formato", passed: ["person: did not choose"] } } }, 0);
   const after = stackRows(view, 100, 0, false);
   expect(after.some((r) => r.includes("waiting for you to choose") || r.includes("choose the answer"))).toBe(false);
-  expect(after.slice(-5)).toEqual([" - um", " - dois", " - três", " escolha chose aron (B), by model: segue o formato", " passed over person: did not choose"]);
-  expect(after.find((r) => r.startsWith(" └ ✓ escolha"))).toContain("chose aron (B)");
+  expect(after.slice(-5)).toEqual([" - um", " - dois", " - três", " escolha chose desk (B), by model: segue o formato", " passed over person: did not choose"]);
+  expect(after.find((r) => r.startsWith(" └ ✓ escolha"))).toContain("chose desk (B)");
 });

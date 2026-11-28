@@ -24,23 +24,23 @@ const fakeSsh = script(
 const fake = join(import.meta.dir, "fixtures", "fake-harness.ts");
 
 test("the ssh command: keys only, the jump, the extra options, then the destination", () => {
-  expect(sshCommand({ type: "machine", ssh: "admin@192.168.10.230", jump: "aron", sshOptions: ["-o", "X=1"], providers: {} })).toEqual([
-    "ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-J", "aron", "-o", "X=1", "admin@192.168.10.230",
+  expect(sshCommand({ type: "machine", ssh: "admin@192.168.10.230", jump: "desk", sshOptions: ["-o", "X=1"], providers: {} })).toEqual([
+    "ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-J", "desk", "-o", "X=1", "admin@192.168.10.230",
   ]);
 });
 
 test("a machine whose key ssh does not know yet: the failure says how to accept it, once, by hand", async () => {
-  const gibbor = { type: "machine" as const, ssh: "admin@192.168.10.230", jump: "aron", providers: {} };
-  const hint = "the key of admin@192.168.10.230 is not in ~/.ssh/known_hosts yet, and Kli's ssh never asks. Accept it once by hand, checking the fingerprint: ssh -J aron admin@192.168.10.230 true (in a Kli session, start it with !)";
-  expect(sshWhy(sshCommand(gibbor), "Host key verification failed.\n")).toBe(hint);
+  const gpubox = { type: "machine" as const, ssh: "admin@192.168.10.230", jump: "desk", providers: {} };
+  const hint = "the key of admin@192.168.10.230 is not in ~/.ssh/known_hosts yet, and Kli's ssh never asks. Accept it once by hand, checking the fingerprint: ssh -J desk admin@192.168.10.230 true (in a Kli session, start it with !)";
+  expect(sshWhy(sshCommand(gpubox), "Host key verification failed.\n")).toBe(hint);
   const changed = "@@@ WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED! @@@\nHost key for 192.168.10.230 has changed and you have requested strict checking.\nHost key verification failed.\n";
-  expect(sshWhy(sshCommand(gibbor), changed)).toStartWith("the key of 192.168.10.230 is not the one in ~/.ssh/known_hosts. If that machine was reinstalled, remove the old key (ssh-keygen -R 192.168.10.230)");
-  expect(sshWhy(sshCommand(gibbor), "ssh: connect to host 192.168.10.230 port 22: Operation timed out\n")).toBe("ssh: connect to host 192.168.10.230 port 22: Operation timed out");
+  expect(sshWhy(sshCommand(gpubox), changed)).toStartWith("the key of 192.168.10.230 is not the one in ~/.ssh/known_hosts. If that machine was reinstalled, remove the old key (ssh-keygen -R 192.168.10.230)");
+  expect(sshWhy(sshCommand(gpubox), "ssh: connect to host 192.168.10.230 port 22: Operation timed out\n")).toBe("ssh: connect to host 192.168.10.230 port 22: Operation timed out");
   // what the tunnel and the search of the machine say
   process.env.KLI_SSH = script("ssh-unknown", 'echo "Host key verification failed." >&2; exit 255');
   try {
-    await expect(new Tunnels().port(gibbor, 11435)).rejects.toThrow(`ssh tunnel to admin@192.168.10.230 failed: ${hint}`);
-    await expect(discover({ ...gibbor, providers: {} })).rejects.toThrow(`ssh to admin@192.168.10.230 failed: ${hint}`);
+    await expect(new Tunnels().port(gpubox, 11435)).rejects.toThrow(`ssh tunnel to admin@192.168.10.230 failed: ${hint}`);
+    await expect(discover({ ...gpubox, providers: {} })).rejects.toThrow(`ssh to admin@192.168.10.230 failed: ${hint}`);
   } finally {
     delete process.env.KLI_SSH;
   }

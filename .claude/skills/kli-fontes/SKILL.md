@@ -8,7 +8,7 @@ description: As regras das fontes de inferência do Kli, em três níveis (local
 ## 1. Três níveis, um nome
 
 - **O nome do modelo:** os três níveis separados por barra, `local/provedor/modelo`. Exemplos: `mac/ollama/lfm3`,
-  `aron/claude/haiku`, `vertex/deepseek-ai/deepseek-v4.1-flash-maas`.
+  `gpubox/claude/haiku`, `vertex/deepseek-ai/deepseek-v4.1-flash-maas`.
 - **Numa API:** o provedor é quem fez o modelo e faz parte do id (`anthropic/claude-sonnet-5-5`).
 - **Nome incompleto:** o que fica de fora vem do padrão; `mac/agy`, por exemplo, é o Antigravity no modelo dele.
 - **Onde o nome vale:** em `/model <nome>`, em `kli -m <nome>`, no `model` e no `fallback` da configuração.
@@ -53,7 +53,7 @@ Por baixo, há quatro protocolos:
 - **O comando** (`sshCommand`): `BatchMode=yes` (só chave, nunca senha nem pergunta), `ConnectTimeout=10`, `-J`
   quando há `jump`, e por último as `sshOptions`.
 - **Máquina nova:** como o ssh do Kli nunca pergunta, a primeira conexão é feita à mão, uma vez, para conferir e
-  aceitar a chave da máquina (`!ssh -J aron usuário@host true`). O `sshWhy` transforma "Host key verification failed"
+  aceitar a chave da máquina (`!ssh -J gpubox usuário@host true`). O `sshWhy` transforma "Host key verification failed"
   nessa instrução. Quando a chave mudou, ele sugere o `ssh-keygen -R` e avisa do risco.
 - **O código do Kli nunca escreve em `~/.ssh`.**
 - **Túnel:** `ssh -N -L 127.0.0.1:<livre>:127.0.0.1:<porta>` com `ExitOnForwardFailure` e

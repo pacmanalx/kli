@@ -159,7 +159,7 @@ test("OpenAI-compatible: the tools are offered and a call that comes in pieces i
 });
 
 test("a server that refuses tools is asked again without them, and the answer says so", async () => {
-  const p = new OpenAIProvider("aron/llama.cpp", { url: `${server.url}notools/v1`, model: "m" });
+  const p = new OpenAIProvider("desk/llama.cpp", { url: `${server.url}notools/v1`, model: "m" });
   const r = await p.chat(ask);
   expect(r.notice).toContain("does not take tools");
   expect(bodies.at(-1).tools).toBeUndefined();

@@ -58,7 +58,7 @@ agente na pasta, com as ferramentas e as permissões dele. As flags de cada um e
 ## 6. Escopo
 
 - **Hoje:** só texto (o multimodal fica para depois). O que falta das ferramentas é o MCP.
-- **Ordem das próximas fatias:** está no `docs/kli.md`, seção "Fatias".
+- **Ordem das próximas fatias:** está no `docs/kli.md`, seção "Próximas fatias".
 - **Mudança de escopo** é decisão do Alexandre. Ideia nova vai como proposta, sem entrar no código.
 - **Deploy:** o Kli não tem deploy. No Kli, "deploy" é um uso: o modelo roda o deploy do projeto da pessoa pelo
   Bash.

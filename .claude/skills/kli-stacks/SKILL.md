@@ -337,8 +337,8 @@ em dois e dar **duas saídas**, para comparar modelos e as ferramentas que o Kli
   - **Vale a primeira palavra, e a resposta é cortada em 32 tokens** (`ChatRequest.maxTokens`): sem corte, o lfm3
     respondia "one" e seguia "pensando" até 2.000 tokens (52 s), e a última palavra já era outra.
   - Um modelo de decisão sem treino decide pela posição das opções e diz "stack" a quase tudo (0,99 para "ok para push").
-- **Aquecer (`warmTriage`):** o Alexandre viu o Aron falhar nas primeiras chamadas depois de parado (03/11; não
-  reproduzido, e as falhas nos rastros eram do túnel). A tela cheia chama o modelo de triagem em segundo plano ao
+- **Aquecer (`warmTriage`):** o Alexandre viu um `llama-server` da rede falhar nas primeiras chamadas depois de
+  parado (03/11; não reproduzido, e as falhas nos rastros eram do túnel). A tela cheia chama o modelo de triagem em segundo plano ao
   abrir, ao trocar de stack e ao trocar o modelo (6,6 s → 1,7 s na primeira mensagem). Essa chamada fica **fora do
   rastro**: com ela lá, cada Kli que abre deixaria uma sessão vazia. A triagem que falha cai para a stack e diz por
   quê.

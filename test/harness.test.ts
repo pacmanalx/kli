@@ -88,7 +88,7 @@ test("a CLI Kli knows works as an agent in the person's folder; in plan mode it 
   expect((await where().chat({ messages: ask, workspace: { root, mode: "plan" } })).text).toBe(`${root} | --plan`);
   // no folder (kli check) or another machine: isolated, in the neutral folder
   expect((await where().chat({ messages: ask })).text).toEndWith("/.kli/harness | --alone");
-  expect(where({ ssh: ["ssh", "aron"] }).how({ root, mode: "default" })).toEqual({ mode: "isolated", args: ["--alone"] });
+  expect(where({ ssh: ["ssh", "desk"] }).how({ root, mode: "default" })).toEqual({ mode: "isolated", args: ["--alone"] });
   // without a plan mode of its own (Kimi in prompt mode), plan mode keeps it away from the folder
   expect((await where({ modes: { ...modes, plan: [] } }).chat({ messages: ask, workspace: { root, mode: "plan" } })).text).toEndWith("/.kli/harness | --alone");
   // $PWD says the same folder, not where the terminal was
