@@ -16,25 +16,25 @@ const write = (id: string, events: object[]) =>
 write("s1", [
   { ts: at(0), type: "start", user: "t", surface: "cli", profile: "kli.chat" },
   { ts: at(0, 1), type: "prompt" },
-  { ts: at(0, 1), type: "response", provider: "aron", model: "qwen", ms: 300, inputTokens: 50, outputTokens: 5 },
+  { ts: at(0, 1), type: "response", provider: "desk", model: "qwen", ms: 300, inputTokens: 50, outputTokens: 5 },
   { ts: at(0, 2), type: "prompt" },
-  { ts: at(0, 2), type: "failure", provider: "aron", ms: 0, error: "x", afterText: false },
-  { ts: at(0, 2), type: "fallback", from: "aron", to: "local", reason: "x" },
+  { ts: at(0, 2), type: "failure", provider: "desk", ms: 0, error: "x", afterText: false },
+  { ts: at(0, 2), type: "fallback", from: "desk", to: "local", reason: "x" },
   { ts: at(0, 2), type: "response", provider: "local", model: "lfm3", ms: 900, inputTokens: 40, outputTokens: 10 },
   { ts: at(0, 3), type: "prompt" },
-  { ts: at(0, 3), type: "interrupted", provider: "aron", ms: 2000, afterText: true },
+  { ts: at(0, 3), type: "interrupted", provider: "desk", ms: 2000, afterText: true },
 ]);
 write("s2", [
   { ts: at(2), type: "start", user: "t", surface: "cli", profile: "kli.chat" },
   { ts: at(2, 1), type: "prompt" },
-  { ts: at(2, 1), type: "response", provider: "aron", model: "qwen", ms: 500, inputTokens: 10, outputTokens: 5 },
+  { ts: at(2, 1), type: "response", provider: "desk", model: "qwen", ms: 500, inputTokens: 10, outputTokens: 5 },
   { ts: at(2, 2), type: "prompt" },
   { ts: at(2, 2), type: "failure", provider: "gemini", ms: 100, error: "y", afterText: false },
 ]);
 write("old", [
   { ts: at(40), type: "start", user: "t", surface: "cli", profile: "kli.chat" },
   { ts: at(40, 1), type: "prompt" },
-  { ts: at(40, 1), type: "response", provider: "aron", model: "qwen", ms: 9999 },
+  { ts: at(40, 1), type: "response", provider: "desk", model: "qwen", ms: 9999 },
 ]);
 
 test("percentile is nearest-rank", () => {
@@ -48,7 +48,7 @@ test("collects outcomes, providers and days inside the period", () => {
   expect(s).toMatchObject({ sessions: 2, prompts: 5, fallbacks: 1, inputTokens: 100, outputTokens: 20, medianMs: 500 });
   expect(s.outcomes).toEqual({ answered: 3, failed: 1, interrupted: 1 });
   expect(s.providers.map((p) => [p.provider, p.answers, p.medianMs, p.failures])).toEqual([
-    ["aron", 2, 300, 1],
+    ["desk", 2, 300, 1],
     ["local", 1, 900, 0],
     ["gemini", 0, 0, 1],
   ]);
@@ -63,8 +63,8 @@ test("one session only, with no per-day series", () => {
 });
 
 test("bars grow from one baseline, half a cell at a time, with the value at the tip", () => {
-  const lines = barChart([{ label: "aron", value: 1, text: "0.3s" }, { label: "gemini", value: 4, text: "1.2s", note: "p90 2.0s" }], 40, TOKENS.dark, false);
-  expect(lines[0]).toMatch(/^ aron    ▄+▖? 0\.3s$/);
+  const lines = barChart([{ label: "desk", value: 1, text: "0.3s" }, { label: "gemini", value: 4, text: "1.2s", note: "p90 2.0s" }], 40, TOKENS.dark, false);
+  expect(lines[0]).toMatch(/^ desk    ▄+▖? 0\.3s$/);
   expect(lines[1]).toMatch(/^ gemini  ▄+ 1\.2s  p90 2\.0s$/);
   expect(lines[0]!.indexOf("▄")).toBe(lines[1]!.indexOf("▄"));
 });
@@ -78,7 +78,7 @@ test("one provider gets a line of numbers, not a one-bar chart", async () => {
   const { statsReport } = await import("../src/cli/charts.ts");
   const lines = statsReport(collectStats(dir, { sessions: ["s2"] }), "s2", 80, TOKENS.dark, false);
   expect(lines.some((l) => l.includes("▄"))).toBe(false);
-  expect(lines.join("\n")).toContain("aron · qwen   1 answer   median 0.5s · p90 0.5s");
+  expect(lines.join("\n")).toContain("desk · qwen   1 answer   median 0.5s · p90 0.5s");
 });
 
 test("a prompt that used tools has a response per step, and was answered once", () => {

@@ -76,9 +76,9 @@ test("a server's own instructions go at the end of the system message, or make o
   ]);
   expect(openaiMessages(chat)).toEqual(chat.map(({ role, content }) => ({ role, content })));
   // from the config to the provider: the exo cluster on another machine, reached directly
-  const config = { locations: { rosh: { type: "machine" as const, host: "100.66.180.64", providers: { exo: { type: "server" as const, port: 52415, model: "mlx-community/NVIDIA-Nemotron-Nano-9B-v2-6bit", instructions: "/no_think" } } } } };
-  expect(connectionNow(config, { ref: "rosh/exo/mlx-community/NVIDIA-Nemotron-Nano-9B-v2-6bit", location: "rosh", provider: "exo", model: "mlx-community/NVIDIA-Nemotron-Nano-9B-v2-6bit", label: "rosh/exo" })).toMatchObject({
-    url: "http://100.66.180.64:52415/v1",
+  const config = { locations: { cluster: { type: "machine" as const, host: "192.168.10.232", providers: { exo: { type: "server" as const, port: 52415, model: "mlx-community/NVIDIA-Nemotron-Nano-9B-v2-6bit", instructions: "/no_think" } } } } };
+  expect(connectionNow(config, { ref: "cluster/exo/mlx-community/NVIDIA-Nemotron-Nano-9B-v2-6bit", location: "cluster", provider: "exo", model: "mlx-community/NVIDIA-Nemotron-Nano-9B-v2-6bit", label: "cluster/exo" })).toMatchObject({
+    url: "http://192.168.10.232:52415/v1",
     instructions: "/no_think",
   });
 });

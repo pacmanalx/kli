@@ -8,14 +8,14 @@ import type { Config } from "../src/core/types.ts";
 const config: Config = {
   locations: {
     mac: { type: "machine", providers: { ollama: { type: "server", port: 11434, model: "lfm3" }, agy: { type: "cli", command: "agy" } } },
-    gibbor: { type: "machine", ssh: "admin@192.168.10.230", providers: { ollama: { type: "server", port: 11435, tunnel: true, model: "lfm3" } } },
+    gpubox: { type: "machine", ssh: "admin@192.168.10.230", providers: { ollama: { type: "server", port: 11435, tunnel: true, model: "lfm3" } } },
   },
-  model: "gibbor/ollama/lfm3",
+  model: "gpubox/ollama/lfm3",
   fallback: ["mac/ollama/lfm3", "mac/agy"],
 };
 
 test("renaming a location or a provider takes the model and the fallback along", () => {
-  const renamed = putLocation(config, "box", config.locations.gibbor!, "gibbor");
+  const renamed = putLocation(config, "box", config.locations.gpubox!, "gpubox");
   expect(Object.keys(renamed.locations)).toEqual(["mac", "box"]); // same place in the list
   expect(renamed.model).toBe("box/ollama/lfm3");
   const p = putProvider(config, "mac", "antigravity", { type: "cli", command: "agy" }, "agy");
@@ -28,9 +28,9 @@ test("a name already taken is refused", () => {
 });
 
 test("deleting stops the model and the fallback from pointing there", () => {
-  const { config: c, changed } = removeLocation(config, "gibbor");
+  const { config: c, changed } = removeLocation(config, "gpubox");
   expect(c.model).toBeUndefined();
-  expect(changed).toEqual(["model gibbor/ollama/lfm3 removed"]);
+  expect(changed).toEqual(["model gpubox/ollama/lfm3 removed"]);
   const r = removeProvider(config, "mac", "agy");
   expect(r.config.fallback).toEqual(["mac/ollama/lfm3"]);
   expect(r.changed).toEqual(["left the fallback"]);

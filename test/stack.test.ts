@@ -311,7 +311,7 @@ test("an aggregator's block: the shares by letter, made to add up to 100; withou
 
 test("a verdict: read from words or a code fence, one mark per requirement (what is left out is missing), adherence from the marks", () => {
   expect(adherence(["met", "partial", "missing", "met"])).toBe(63);
-  const v = readVerdict('Aqui está:\n```json\n{"requirements": ["r1", "r2", ""], "answers": {"A": {"items": ["met", "partial"], "note": " curta "}, "Z": {"items": ["met"]}}}\n```', { A: "junta", B: "aron" });
+  const v = readVerdict('Aqui está:\n```json\n{"requirements": ["r1", "r2", ""], "answers": {"A": {"items": ["met", "partial"], "note": " curta "}, "Z": {"items": ["met"]}}}\n```', { A: "junta", B: "desk" });
   expect(v).toEqual({ requirements: ["r1", "r2"], judged: [{ node: "junta", items: ["met", "partial"], adherence: 75, note: "curta" }] });
   expect(readVerdict("Sem JSON nenhum.", { A: "a" })).toBeUndefined();
   expect(readVerdict('{"requirements": [], "answers": {}}', { A: "a" })).toBeUndefined();
@@ -458,8 +458,8 @@ test("choosing: it needs inputs, 'by' only goes with choose, and the chooser is 
     'stack "s": node "e": by is a list of model, person, decision, in the order to try',
   ]);
   expect(stackOutputs(stackOf({ a: { model: "m/a" }, b: { model: "m/b" }, c: { model: "m/c", role: "choose", from: ["a", "b"] } }))).toEqual(["c"]);
-  expect(readChoice('Fico com a B: {"choice": "b", "why": "mais curta"}', { A: "gibbor", B: "aron" })).toEqual({ label: "B", node: "aron", why: "mais curta" });
-  expect(readChoice('{"choice": "C"}', { A: "gibbor", B: "aron" })).toBeUndefined();
+  expect(readChoice('Fico com a B: {"choice": "b", "why": "mais curta"}', { A: "gpubox", B: "desk" })).toEqual({ label: "B", node: "desk", why: "mais curta" });
+  expect(readChoice('{"choice": "C"}', { A: "gpubox", B: "desk" })).toBeUndefined();
 });
 
 test("a model chooses: the chosen answer is the stack's, and every branch goes on from it on the next prompt", async () => {

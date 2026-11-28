@@ -36,7 +36,7 @@ test("the rule: the command and its subcommands; exactly as asked when one word 
   expect(rule("python3 -c 'import os'")).toBe("python3 -c import os (exactly)");
   expect(rule("make")).toBe("make (exactly)");
   expect(rule("rm -rf dist")).toBe("rm -rf dist (exactly)");
-  expect(rule("ssh aron 'systemctl restart app'")).toBe("ssh aron systemctl restart app (exactly)");
+  expect(rule("ssh desk 'systemctl restart app'")).toBe("ssh desk systemctl restart app (exactly)");
   expect(rule("NODE_ENV=production npm run build")).toBe("NODE_ENV=production npm run build (exactly)");
   expect(rule("cat ../../etc/passwd")).toBe("cat ../../etc/passwd (exactly)");
   expect(rule("rm -rf $DIR")).toBeUndefined();

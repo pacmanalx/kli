@@ -66,7 +66,7 @@ test("with a filter, typing narrows the list (digits too), and a name it lacks c
 });
 
 test("a long message is wrapped under the list, not cut at the edge", () => {
-  const p: Picker = { title: "Model › gibbor", options: [], index: 0, filter: "", message: { kind: "error", text: "ssh tunnel to admin@192.168.10.230 failed: accept its key by hand: ssh -J aron admin@192.168.10.230 true" } };
+  const p: Picker = { title: "Model › gpubox", options: [], index: 0, filter: "", message: { kind: "error", text: "ssh tunnel to admin@192.168.10.230 failed: accept its key by hand: ssh -J desk admin@192.168.10.230 true" } };
   const rows = pickerRows(p, 50, 20, false);
-  expect(rows.slice(-4, -1)).toEqual([" ✕ ssh tunnel to admin@192.168.10.230 failed:", "   accept its key by hand: ssh -J aron", "   admin@192.168.10.230 true"]);
+  expect(rows.slice(-4, -1)).toEqual([" ✕ ssh tunnel to admin@192.168.10.230 failed:", "   accept its key by hand: ssh -J desk", "   admin@192.168.10.230 true"]);
 });

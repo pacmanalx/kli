@@ -81,7 +81,7 @@ kli -m mac/ollama/lfm3 "..."       # escolhe o modelo: local/provedor/modelo
 kli --stack compare "..."          # uma stack responde, desta vez (ver Model stacks)
 kli init                           # acha as fontes desta máquina e grava a configuração, com stacks de exemplo
 kli locations                      # locais e provedores: onde ficam, modelo padrão, credenciais (sem rede)
-kli models [onde]                  # os modelos que um local ou provedor oferece (kli models gibbor/ollama)
+kli models [onde]                  # os modelos que um local ou provedor oferece (kli models lab/ollama)
 kli check [onde]                   # manda "ok" para o modelo padrão de cada provedor (ou de um) e mede
 kli sessions [id]                  # as últimas sessões, ou o rastro de uma
 kli stats [--days N]               # gráficos do rastro: desfechos, latência e tokens por modelo, respostas por dia
@@ -140,10 +140,10 @@ Todo modelo que a pessoa tem fica ao alcance de uma configuração simples, em t
 | Local (onde) | Provedor (quem serve) | Modelo |
 |---|---|---|
 | esta máquina (`mac`) | servidor: `ollama`, `llama.cpp`, LM Studio, vLLM | o que o servidor lista |
-| outra máquina (`aron`, `gibbor`) | servidor, ou CLI: `claude`, `agy`, `opencode`, `kimi` ou outro | o que o servidor ou o CLI lista |
+| outra máquina (`gpubox`, `lab`) | servidor, ou CLI: `claude`, `agy`, `opencode`, `kimi` ou outro | o que o servidor ou o CLI lista |
 | API (`vertex`, `anthropic`, OpenRouter...) | quem fez o modelo: `google`, `deepseek-ai`, `zai-org`... | o que a API oferece |
 
-O modelo tem um nome só, com os três níveis: `mac/ollama/lfm3`, `aron/claude/haiku`,
+O modelo tem um nome só, com os três níveis: `mac/ollama/lfm3`, `gpubox/claude/haiku`,
 `vertex/deepseek-ai/deepseek-v4.1-flash-maas`. Numa API o provedor faz parte do id (`anthropic/claude-sonnet-5-5`), e
 o que ficar de fora vem do padrão: `vertex` é o modelo padrão dele, `mac/agy` é o Antigravity no modelo dele. Vale em
 `/model <nome>`, em `kli -m <nome>`, no `model` e no `fallback` da configuração.
@@ -161,7 +161,7 @@ provedores:
   por um túnel SSH que o próprio Kli abre e fecha, e que ele abre de novo sozinho se cair (o Mac dormiu, a rede
   caiu); um CLI roda lá via SSH, com o login daquela máquina, numa pasta
   neutra (`~/.kli/harness`). O SSH do Kli só usa chaves e nunca pergunta nada; por isso a primeira conexão com uma
-  máquina nova é feita uma vez à mão, para conferir e aceitar a chave dela (no Kli, `!ssh -J aron usuário@host true`).
+  máquina nova é feita uma vez à mão, para conferir e aceitar a chave dela (no Kli, `!ssh -J gpubox usuário@host true`).
   Quando falta a chave, ou quando ela mudou, o erro diz isso e mostra o comando.
 - **Sem tempo-limite.** Nenhum modelo tem tempo-limite: um servidor, uma API ou um CLI responde pelo tempo que
   precisar, até terminar ou até você apertar Esc (decisão de 03/11/2026, depois de o Antigravity ser cortado aos 15
@@ -173,8 +173,8 @@ provedores:
   aparece na conversa como os do Kli (detalhes em Ferramentas). Qualquer outro CLI entra com os argumentos que a
   pessoa der (`{prompt}`, `{model}` e `{mode}` são trocados), e a resposta é lida como texto.
 - **Instruções de um servidor:** `"instructions"` num provedor `server` vai no fim da mensagem de sistema só para os
-  modelos dele. Serve para o que o modelo só aceita ali: o Nemotron do cluster exo (local `rosh`, provedor `exo`, porta
-  52415) só para de pensar em voz alta com `"instructions": "/no_think"`, porque o exo ignora `enable_thinking` e
+  modelos dele. Serve para o que o modelo só aceita ali: o Nemotron de um cluster exo (local `cluster`, provedor
+  `exo`, porta 52415) só para de pensar em voz alta com `"instructions": "/no_think"`, porque o exo ignora `enable_thinking` e
   `reasoning_effort` (31/10/2026).
 - **A janela de contexto de um servidor.** O Ollama carrega cada modelo com uma janela pequena (4096 tokens num
   notebook, mesmo num modelo que aceita 256 mil), e a API compatível com OpenAI, que o Kli usa, não aceita `num_ctx`.
@@ -318,11 +318,11 @@ lado a lado**, para comparar modelos e as ferramentas que eles chamam.
 ```json
 "stacks": {
   "compara": { "nodes": {
-    "gibbor": { "model": "gibbor/ollama/lfm3" },
-    "aron":   { "model": "aron/llama.cpp/qwen2.5-7b" } } },
+    "lab":    { "model": "lab/ollama/lfm3" },
+    "gpubox": { "model": "gpubox/llama.cpp/qwen2.5-7b" } } },
   "revisao": { "nodes": {
-    "a": { "model": "gibbor/ollama/lfm3" },
-    "b": { "model": "aron/llama.cpp/qwen2.5-7b" },
+    "a": { "model": "lab/ollama/lfm3" },
+    "b": { "model": "gpubox/llama.cpp/qwen2.5-7b" },
     "junta": { "model": "vertex/google/gemini-3.5-flash", "role": "aggregate", "from": ["a", "b"] },
     "verificador": { "model": "vertex/google/gemini-3.5-flash", "role": "verify", "from": ["junta", "a", "b"] } } }
 },
@@ -342,7 +342,7 @@ lado a lado**, para comparar modelos e as ferramentas que eles chamam.
   pasta e com a permissão da tela, como sem stack: ele mesmo decide se usa ferramenta (como no Claude Code).
 
   ```json
-  "triage": { "model": "aron/llama.cpp/qwen2.5-7b" },
+  "triage": { "model": "gpubox/llama.cpp/qwen2.5-7b" },
   "stacks": { "opus-kimi": { "purpose": "implementing, fixing, refactoring, testing or reviewing the project's code", "nodes": { … } } }
   ```
 
@@ -366,8 +366,8 @@ lado a lado**, para comparar modelos e as ferramentas que eles chamam.
   - **O texto da triagem** (`src/core/triage.ts`) foi medido em 03/11 com 78 mensagens, 48 delas fora do ajuste e 18
     para uma stack de personagens: regras sobre o que é o trabalho da stack, exemplos para
     outra finalidade e seis exemplos em forma de conversa. A resposta é uma palavra: vale a primeira, e o Kli corta
-    em 32 tokens (o lfm3, sem corte, seguia "pensando" até 52 s). Pelo próprio Kli: o qwen2.5-7b do Aron acertou 74
-    (antes, com um sim/não simples, 61), em 0,3 s; o Gemini 3.5 Flash Lite, 75, em 1 s; o lfm3, 62, e manda 12 de
+    em 32 tokens (o lfm3, sem corte, seguia "pensando" até 52 s). Pelo próprio Kli: o qwen2.5-7b num `llama-server`
+    da rede acertou 74 (antes, com um sim/não simples, 61), em 0,3 s; o Gemini 3.5 Flash Lite, 75, em 1 s; o lfm3, 62, e manda 12 de
     28 trabalhos de stack para um modelo só; o Haiku pelo Claude Code, 71, e em duas tentou usar ferramenta em vez
     de responder. Um modelo de decisão pequeno e sem treino não serve aqui (decide pela posição das opções). Um erro visto depois, no `kli
     -p`: "escreva uma função soma(a, b) em Python, só o código" foi para o modelo (com "com um teste", foi para a
@@ -429,7 +429,7 @@ lado a lado**, para comparar modelos e as ferramentas que eles chamam.
     o rodapé diz qual nó falhou e por quê. No `kli -p`, a linha de cada nó, no stderr, já leva o motivo inteiro.
   - **`answer`** (o padrão): responde ao pedido usando o que há de certo nas respostas.
   - **`aggregate`**: junta as respostas numa só e diz, num bloco que o Kli tira do texto (não aparece nem enquanto
-    chega), quanto veio de cada uma: a **contribuição** de cada ramo (`used gibbor 40% · aron 60%`).
+    chega), quanto veio de cada uma: a **contribuição** de cada ramo (`used lab 40% · gpubox 60%`).
   - **`verify`**: **só julga**. Lista os requisitos do pedido (o que ele pede, inclusive formato, tamanho e língua) e
     marca cada um como cumprido, parcial ou faltando para cada resposta que recebe. A **aderência** sai dessas marcas
     (cumprido 1, parcial ½, faltando 0), não de uma nota do modelo. O veredito vem em JSON; se não vier, o Kli pede
@@ -476,7 +476,7 @@ lado a lado**, para comparar modelos e as ferramentas que eles chamam.
     - **`decision`**: um modelo treinado só para decidir. O que se testou sem treino não escolhe bem (31/10/2026:
       preferia uma posição), então por ora é pulado, dizendo por quê.
 
-    A linha do nó diz quem escolheu (`chose aron (B) by person`), e embaixo vêm o porquê e por que os anteriores de
+    A linha do nó diz quem escolheu (`chose gpubox (B) by person`), e embaixo vêm o porquê e por que os anteriores de
     `by` não escolheram. Sem ninguém que escolha, o nó falha dizendo isso.
 
   - **`ground`** (balizamento): traz contexto de **fontes de dados** para a etapa seguinte, sem modelo (só busca).
@@ -802,125 +802,17 @@ e configurações prontas em `examples/`). Um local de cada tipo:
 As chaves ficam fora, em `~/.kli/.env`. A configuração de antes (perfis e provedores, até 30/10/2026) é recusada com
 uma mensagem.
 
-## Fatias, em ordem
+## Próximas fatias
 
-1. **Conversa básica** ✅ (30/10): pergunta única, sessão interativa, entrada padrão como contexto, `--json`, perfis
-   com fallback e destinations, rastro, `kli profiles` e `kli sessions`. Provedor: Aron, com fallback local.
-2. **Tela cheia** ✅ (30/10), como OpenCode e Claude Code: o golem fixo no topo dando status (perfil, provedor,
-   estado, última resposta, totais da sessão; pisca esperando o modelo e fica "met" quando o provedor falha), a
-   conversa rolando no meio (PgUp/PgDn) e a entrada embaixo, com histórico (↑/↓). Esc ou Ctrl+C interrompe a
-   resposta; Ctrl+C na linha vazia ou Ctrl+D sai. Renderizador próprio (sem Ink nem OpenTUI): cada quadro é uma
-   lista de linhas e só as que mudaram são reescritas.
-3. **Vários provedores** ✅ (30/10): `openai`, `vertex` (Gemini nativo e modelos abertos pelo endpoint compatível)
-   e `anthropic`; `kli providers [check]`, `--provider` e `/model`. Testado de verdade: Aron, `lfm3`, `qwen3:14b`,
-   `gemini-3.5-flash-lite` e `gemini-3.5-flash`; o Claude está pronto e espera a chave.
-4. **Gráficos e harnesses em cascata** ✅ (30/10): `kli stats` e `/stats` desenham, com caracteres de bloco, o que o
-   rastro diz (desfechos com ícone e rótulo; mediana de latência e tokens por provedor em barras finas de meio
-   bloco; respostas por dia em colunas), na paleta do skill de dataviz validada para fundo claro e escuro (o Kli
-   pergunta a cor de fundo ao terminal). Novo tipo de provedor `harness` e `fallback` em lista.
-5. **Ferramentas** ✅ (30/10), como no Claude Code: Read, Glob, Grep, Write, Edit e Bash na pasta onde o `kli` roda,
-   com permissão antes de gravar e rodar e os modos do Shift+Tab. Depois (30/10): `AGENTS.md` e `CLAUDE.md`, regras de
-   comando por parte da linha, saída ao vivo, segundo plano (BashOutput, KillBash, Ctrl+B, `/jobs`) e `!comando`.
-   Depois: os CLIs como agentes na pasta, com os passos deles na tela. Falta: MCP.
-6. **Confirmação de escrita:** uma ferramenta de escrita inofensiva (gravar nota em arquivo) para provar a regra 4.
-7. **Conhecimento:** RAG primeiro. O caminho desenhado é o balizamento das stacks (seção "Balizamento (`ground`):
+O que já está feito está descrito nas seções acima. O que falta, em ordem:
+
+1. **Confirmação de escrita:** uma ferramenta de escrita inofensiva (gravar nota em arquivo) para provar a regra 4.
+2. **Conhecimento:** RAG primeiro. O caminho desenhado é o balizamento das stacks (seção "Balizamento (`ground`):
    desenho").
-8. **Escada de modelos:** degrau barato primeiro, sobe quando a chamada vem inválida; taxa de subida medida no rastro.
-
-Feito fora da ordem: **locais → provedores → modelos** ✅ (30/10). Os perfis saíram; o `/model` navega e edita os
-três níveis; o Kli acha o que uma máquina tem, abre os túneis e roda CLIs remotos por SSH; as chaves vão para
-`~/.kli/.env`. Testado de verdade: os seis provedores do Mac, o `llama-server` e o Claude Code do Aron, o Ollama da
-Gibbor, o Gemini e o DeepSeek pela API do Google.
-
-**Model stacks** (31/10), em fatias:
-
-1. **Motor** ✅ (31/10): o grafo na configuração (`stacks`, `stack`), os nós em paralelo pelas dependências, a
-   junção, várias saídas, as medidas de cada nó, o rastro e o `kli --stack`. Testado com a `compara` (Gibbor × Aron,
-   lado a lado) e a `revisao` (os dois juntados pelo Gemini).
-2. **`/stack` na tela cheia** ✅ (31/10): escolher a stack, a árvore ao vivo, as saídas lado a lado e a tabela de
-   comparação. Testado com a `compara` e a `revisao`, com Esc no meio e com uma stack quebrada.
-3. **Papéis `aggregate` e `verify`** ✅ (31/10): o agregador junta e diz de onde veio cada parte; o verificador só
-   julga, listando os requisitos do prompt e dando a aderência ao resultado final e a cada ramo. Na tela, um bloco
-   com os requisitos e as marcas, e a aderência na tabela de comparação. Testado com a `verificada` e a
-   `compara-verificada`. Falta: a aderência ao longo do tempo no `kli stats`.
-4. **Etapa de escolha** ✅ (31/10): o papel `choose`, com `by` = `model`, `person` ou `decision` (este fica pulado até
-   haver um modelo de decisão treinado: o que se testou sem treino prefere uma posição). Testado com a
-   `escolhe`: no `kli -p` o Gemini escolheu; na tela cheia, a pessoa escolheu pelo seletor.
-5. **`/stackbuilder`** ✅ (31/10): uma página em React (com React Flow), servida pelo próprio `kli` e embutida no
-   binário, para montar o grafo, testar com um prompt (inclusive a escolha pela pessoa) e salvar na configuração;
-   também `kli stackbuilder`. Testado no Chrome sem janela com as stacks reais: a `verificada` (Gibbor, Aron, Gemini
-   agregando e verificando) em 42 s, a `escolhe` com a escolha feita na página, e criar, ligar, salvar, renomear,
-   pôr para responder e apagar uma stack, conferindo o arquivo a cada passo.
-6. **Ramos que gravam** ✅ (01/11): `"tools": "write"`, cada nó numa cópia da pasta (um `git worktree` que parte da
-   pasta como ela está, com o que não foi comitado), comandos de leitura mais os de `write.run`, `write.setup` e
-   `write.check`, o diff e a checagem para quem julga, e a pergunta de qual aplicar na tela cheia (no `kli -p`, só os
-   diffs). Decisões do Alexandre: comandos de leitura + lista da stack, o Kli pergunta qual aplicar, a cópia parte
-   do estado atual e a checagem entra já. Testado com a stack `conserta` (Gemini 3.5 Flash com as ferramentas do Kli
-   e Claude Code com o Haiku, numa função com bug): os dois corrigiram, o `bun test` passou nas duas cópias, o juiz
-   deu 100 e 88 (o Haiku começou em inglês), e aplicar levou o diff do Gemini à pasta. Num projeto com dependência
-   (`node_modules` ignorado), `write.setup` = `bun install` deixou cada cópia pronta, e o OpenCode, o Kimi e o
-   Antigravity, como nós que gravam, corrigiram o mesmo bug com a checagem passando nas três cópias. Depois, a pedido
-   do Alexandre ("tem que ser transparente para o usuário, bun é uma ferramenta do kli e não do projeto"), o setup e
-   a checagem passaram a vir do projeto: `.kli/write.json`, a stack, ou os arquivos dele. Em 02/11, depois do teste do
-   Alexandre num repositório com o backend em .NET e o frontend em npm: o juiz deixou de receber as instruções da
-   configuração e ganhou os requisitos fixos (`requirements`); a detecção passou a olhar as pastas logo abaixo e a
-   conhecer o .NET; as recusas aparecem na linha do nó; os comandos e a checagem rodam numa cerca do sistema; o que o
-   setup cria fica fora do diff; o rastro registra o que foi aplicado; e as cópias de um Kli que morreu são removidas
-   pelo próximo. Mais tarde, no mesmo dia, depois do uso do Alexandre num repositório com crates Rust, um frontend
-   npm e testes Python sem lockfile: o nó que estourou o tempo (o Antigravity, aos 15 min, com quatro arquivos
-   mudados) passou a guardar o que fez e a aparecer na lista de aplicar; os testes Python soltos passaram a ser
-   reconhecidos (`python3 -m unittest`, do topo); a checagem só roda num nó que mudou arquivos; e um CLI que estoura
-   o tempo para junto com o que ele iniciou (antes, um comando filho segurava a resposta até acabar). Testado no clone
-   dele com o Gemini: uma pergunta sem mudança terminou em 13,8 s sem checagem, e uma correção de uma frase rodou
-   os 39 testes Python e os Rust dentro da cerca. Antes, no clone do primeiro repositório, com o Gemini 3.5 Flash: `dotnet test` (933 testes) e o `lint` do
-   frontend dentro da cerca, a checagem passando, aplicar pela tela cheia e o `kill -9` no meio de uma rodada. Ainda
-   em 02/11, a pedido do Alexandre, depois de a `opus-kimi` (um nó que grava e o Kimi conferindo) não conseguir dar
-   um `git pull` na `master` de um repositório: o nó que grava sozinho edita a pasta, sem cópia e sem aplicar, com o diff
-   de cada resposta para o juiz e a checagem na própria pasta; cópia só numa comparação (dois ou mais nós que
-   gravam), uma cópia comum da pasta em vez do `git worktree` (funciona fora do Git e dispensa o setup), e cada
-   rodada termina com todas as cópias apagadas, depois de aplicar a escolhida ou de nenhuma (o código só chegou em
-   06/11, abaixo). Em 03/11, a pedido do
-   Alexandre ("todo modelo deve rodar sem tempos limites, até que termine ou o usuário interrompa com ESC"): saíram
-   o tempo-limite dos pedidos HTTP (2 min), dos CLIs (15 min) e dos nós (15 min), o teto de passos do laço (30 numa
-   conversa, 150 num nó) e, com eles, o "go on" do nó que estourava, que ficou sem quando aparecer. Ainda em 03/11, a pedido do
-   Alexandre ("ok para push por exemplo deveria ser entendido como algo simples e não chamar o pipeline da stack"):
-   a triagem antes da stack, com o modelo escolhido pela pessoa (`/triage`) e a finalidade de cada stack
-   (`purpose`), medida com um modelo de decisão sem treino, o lfm3, o qwen2.5-7b, o Haiku e o Gemini 3.5 Flash Lite. Ligada na configuração
-   do Alexandre com o qwen2.5-7b do Aron e finalidade nas stacks de um tipo de trabalho (código, personagens,
-   texto); as de comparação seguem recebendo tudo. Conferida com a configuração dele: 9 de 9 mensagens nas três
-   stacks, em 0,2 a 0,6 s (uma levou 6,4 s). Em 06/11, a pedido do Alexandre ("pode fazer 1 e 2", da fila de 02/11):
-   quem recebe um CLI recebe só a mensagem final dele, com a lista das ferramentas para quem julga ou escolhe, e o
-   juiz não espera o mais lento, julgando em rodadas. Testado com o Claude Code (Haiku) e o Antigravity lendo e o
-   Gemini 3.5 Flash julgando: duas rodadas, com o juiz começando aos 6 s, quando o Claude Code terminou, e
-   julgando o Antigravity aos 17 a 26 s; ao juiz foram 101 de 177 caracteres de um e 326 de 413 do outro. Ainda em
-   06/11, a pedido do Alexandre ("aprovado! pode fazer os 4"), o código passou a seguir as regras da cópia de 02/11,
-   que até ali estavam só nesta página: a cópia comum clonada no lugar do `git worktree`, medida num Git só do Kli
-   (nada é gravado no repositório da pessoa); uma rodada por pergunta, com todas as cópias apagadas ao aplicar, no
-   Esc, no "none" e na pergunta seguinte, e cada nó avisado de que nada foi aplicado; tudo isso também fora do Git;
-   o setup saiu; e, depois de um Esc no meio, a lista de aplicar aparece com o que os nós já fizeram. Testado na tela
-   cheia com o Haiku (Claude Code) e o Gemini 3.5 Flash num projeto Python com um bug: o "none" apagou as cópias e
-   deixou a pasta como estava; aplicar levou o `calc.py` e apagou as cópias; e um Esc quando o Gemini terminou
-   ofereceu o Gemini (`check passed`) e o Haiku (`interrupted, not judged`), e aplicar o Gemini levou os dois
-   arquivos. O `git worktree list` ficou com uma linha só do começo ao fim. Depois, a pedido do Alexandre ("pode
-   fazer", item 3 da fila de 02/11), a linha de cada nó passou a dizer como ele vai enquanto roda: o que leu, a
-   primeira edição e o tempo quieto. Conferido na tela cheia com o Haiku (Claude Code) e o Gemini 3.5 Flash
-   (`read 13 lines · no edit yet`, depois `first edit at 6.3s`); o `quiet for` só nos testes, porque nenhum dos dois
-   ficou um minuto parado. Por fim, os itens 4 e 5 da fila ("vamos fazer os dois pontos que restam"): o juiz e quem
-   escolhe recebem o tamanho de cada mudança lado a lado, e o juiz julga o trabalho de um nó que falhou depois de
-   mudar arquivos. Testado com o Gemini 3.5 Flash gravando e julgando, ao lado de um "CLI" que acrescentava `moda()`
-   ao `calc.py` e saía com erro: a checagem rodou no que ele deixou, o juiz o recebeu marcado como inacabado na
-   primeira rodada e, na segunda, o Gemini com os dois tamanhos lado a lado (4 linhas contra 10), e deu 50 ao
-   inacabado (faltava o teste) e 75 ao Gemini; a lista de aplicar mostrou `failed, unfinished · adherence …`.
-7. **Balizamento (`ground`), a base** ✅ (02/11): o papel `ground`, a forma comum das fontes, a fonte `files`
-   (texto, Markdown, CSV, JSON), os modos, a consulta, as regras, o orçamento, o que esconder, o rastro, o card, o
-   painel das fontes e a prévia no teste do `/stackbuilder`. Decisões tomadas com o "pode fazer" do Alexandre: o nome
-   `ground` (na tela, "grounding"), o modo padrão `enrich`, e a consulta de um `ground` não usa o contexto de um
-   `ground` anterior (o contexto passa adiante, a consulta vem do pedido e das respostas). Testado com o Gemini 3.5
-   Flash sobre os `docs/` do Kli: em `restrict` respondeu só com o contexto e disse que a capital da Austrália não
-   estava lá; em `enrich` respondeu as duas coisas, citando o contexto. Próximas: uma fonte por fatia e o modelo
-   opcional no card (seção "Balizamento (`ground`): desenho").
-
-Ficam para depois: multimodal e espaço do usuário (Workspace).
+3. **Escada de modelos:** degrau barato primeiro, sobe quando a chamada vem inválida; taxa de subida medida no rastro.
+4. **MCP** nas ferramentas.
+5. **A aderência ao longo do tempo** no `kli stats` (o verificador das stacks já mede cada rodada).
+6. **Multimodal** e **espaço do usuário** (Workspace).
 
 ## Balizamento (`ground`): desenho
 
@@ -1039,8 +931,8 @@ vetorial) ou pelo RAG Engine do Google.
 
 - **Identidade no estudo.** Hoje vale o `pessoa` da configuração ou o usuário do sistema; a credencial ADC do
   `gcloud` entra junto com o Vertex.
-- **Contexto que cresce.** A conversa manda o histórico inteiro a cada pergunta, e o Aron tem 16k por conversa.
-  Falta decidir o que fazer quando estourar (cortar as mais antigas, resumir, avisar).
+- **Contexto que cresce.** A conversa manda o histórico inteiro a cada pergunta, e um `llama-server` dividido em
+  slots pode dar só 16k a cada conversa. Falta decidir o que fazer quando estourar (cortar as mais antigas, resumir, avisar).
 - **Balizamento, depois da base.** A ordem das fontes de dados; o `.pdf` e o SQL Server (dependência ou ferramenta
   externa); se um modelo pode escrever o SQL ou só consultas fixas com parâmetros; a API do RAGnaRock; o cliente
   OAuth do Google (de cada pessoa ou interno da organização); se a consulta de um `ground` passa a usar o contexto de

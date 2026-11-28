@@ -12,7 +12,7 @@ test("subcommands", () => {
   expect(parseArgs(["locations"]).command).toBe("locations");
   expect(parseArgs(["models"])).toMatchObject({ command: "models", id: undefined });
   expect(parseArgs(["models", "mac/ollama"])).toMatchObject({ command: "models", id: "mac/ollama" });
-  expect(parseArgs(["check", "gibbor"])).toMatchObject({ command: "check", id: "gibbor" });
+  expect(parseArgs(["check", "gpubox"])).toMatchObject({ command: "check", id: "gpubox" });
   expect(parseArgs(["sessions", "2026"])).toMatchObject({ command: "sessions", id: "2026" });
   expect(parseArgs(["--help"]).command).toBe("help");
   expect(parseArgs(["-v"]).command).toBe("version");

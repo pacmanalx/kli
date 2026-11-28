@@ -80,14 +80,14 @@ test("an exo cluster lists only what it has loaded, once, with the machines it i
       if (path === "/state" && state)
         return Response.json({
           instances: { one: instance(["n1"]), two: instance(["n1", "n2", "n3"]) },
-          nodeIdentities: { n1: { friendlyName: "Rosh" }, n2: { friendlyName: "Yad" }, n3: { friendlyName: "Ruach" } },
+          nodeIdentities: { n1: { friendlyName: "node1" }, n2: { friendlyName: "node2" }, n3: { friendlyName: "node3" } },
         });
       return new Response("not found", { status: 404 });
     },
   });
   try {
     const url = `http://127.0.0.1:${server.port}/v1`;
-    expect(await listModels({ type: "openai", url, model: "" })).toEqual([{ id: nemotron, detail: "loaded on Rosh + Yad + Ruach · 6bit · 7.2 GB" }]);
+    expect(await listModels({ type: "openai", url, model: "" })).toEqual([{ id: nemotron, detail: "loaded on node1 + node2 + node3 · 6bit · 7.2 GB" }]);
     // the state cannot be read: the catalog as it came, rather than nothing
     state = false;
     expect((await listModels({ type: "openai", url, model: "" })).map((m) => m.id)).toEqual([nemotron, "mlx-community/Qwen3.5-9B-8bit", "mlx-community/gemma-4-26b-a4b-it-6bit"]);

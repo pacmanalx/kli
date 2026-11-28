@@ -34,11 +34,11 @@ const set = (fields: FormField[], key: string, v: string) => {
 
 test("a new location starts as another machine, which needs an address or ssh", () => {
   const d = locationForm(config());
-  set(d.form.fields, "name", "gibbor");
+  set(d.form.fields, "name", "gpubox");
   expect(() => readLocation(d)).toThrow(/Address or SSH/);
   set(d.form.fields, "ssh", "admin@192.168.10.230");
-  set(d.form.fields, "jump", "aron");
-  expect(readLocation(d)).toEqual({ name: "gibbor", location: { type: "machine", providers: {}, ssh: "admin@192.168.10.230", jump: "aron" }, key: undefined });
+  set(d.form.fields, "jump", "desk");
+  expect(readLocation(d)).toEqual({ name: "gpubox", location: { type: "machine", providers: {}, ssh: "admin@192.168.10.230", jump: "desk" }, key: undefined });
 });
 
 test("an API: the key goes to its variable, the config only names it", () => {
