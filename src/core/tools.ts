@@ -109,6 +109,35 @@ export const TOOL_SPECS: ToolSpec[] = [
 const lines = (n: number) => `${n} line${n === 1 ? "" : "s"}`;
 const cut = (text: string, max = MAX_OUTPUT) => (text.length > max ? `${text.slice(0, max)}\n… (${text.length - max} more characters)` : text);
 
+/** A line with its spaces evened out: none at the ends, one between words. */
+const even = (line: string) => line.trim().replace(/\s+/g, " ");
+
+/**
+ * The only place in the file where `old` is, but for its spaces (indentation, spaces between words): the whole lines
+ * there, numbered from 1. Its first line may start in the middle of the file's, its last end before the file's. None
+ * when there is no such place, or more than one: then the model must give the text again.
+ */
+export function sameButSpaces(file: string, old: string): { from: number; to: number; text: string } | undefined {
+  const want = old.split("\n").map(even);
+  if (!want.some(Boolean)) return undefined;
+  const have = file.split("\n");
+  const last = want.length - 1;
+  const fits = (at: number) =>
+    want.every((w, k) => {
+      const line = even(have[at + k]!);
+      if (want.length === 1) return line.includes(w);
+      return k === 0 ? line.endsWith(w) : k === last ? line.startsWith(w) : line === w;
+    });
+  let found: number | undefined;
+  for (let at = 0; at + want.length <= have.length; at++) {
+    if (!fits(at)) continue;
+    if (found !== undefined) return undefined;
+    found = at;
+  }
+  if (found === undefined) return undefined;
+  return { from: found + 1, to: found + want.length, text: have.slice(found, found + want.length).join("\n") };
+}
+
 /** The working folder and what has been allowed in it during the session. */
 export class Workspace {
   mode: PermissionMode = "default";
@@ -275,7 +304,18 @@ export class Workspace {
     if (!old) return { ok: false, output: "old_string is empty: to write a whole file use Write", summary: "empty old_string" };
     if (old === next) return { ok: false, output: "old_string and new_string are the same", summary: "nothing to change" };
     const count = before.split(old).length - 1;
-    if (!count) return { ok: false, output: `old_string was not found in ${shown}. It must match exactly, indentation included; Read the file again.`, summary: "text not found" };
+    if (!count) {
+      // the same text with other spaces: the lines as they are, to be copied (a model that reads "    15\t  return"
+      // took the number's indentation for the code's, and asked for the same wrong text twelve times, 23/11/2026)
+      const near = sameButSpaces(before, old);
+      if (near)
+        return {
+          ok: false,
+          output: `old_string was not found in ${shown}: it differs from the file only in spaces (indentation). Lines ${near.from}-${near.to} of the file are, exactly, between the lines <<< and >>>:\n<<<\n${near.text}\n>>>\nUse that text in old_string, character for character, and indent new_string the same way.`,
+          summary: "text not found (spaces differ)",
+        };
+      return { ok: false, output: `old_string was not found in ${shown}. It must match exactly, indentation included; Read the file again.`, summary: "text not found" };
+    }
     if (count > 1 && !i.replace_all) return { ok: false, output: `old_string appears ${count} times in ${shown}: give more surrounding text to make it unique, or set replace_all.`, summary: `found ${count} times` };
     const after = i.replace_all ? before.split(old).join(next) : before.replace(old, () => next);
     const diff = lineDiff(before, after);

@@ -176,6 +176,16 @@ provedores:
   modelos dele. Serve para o que o modelo só aceita ali: o Nemotron do cluster exo (local `rosh`, provedor `exo`, porta
   52415) só para de pensar em voz alta com `"instructions": "/no_think"`, porque o exo ignora `enable_thinking` e
   `reasoning_effort` (31/10/2026).
+- **A janela de contexto de um servidor.** O Ollama carrega cada modelo com uma janela pequena (4096 tokens num
+  notebook, mesmo num modelo que aceita 256 mil), e a API compatível com OpenAI, que o Kli usa, não aceita `num_ctx`.
+  Passou dela, o Ollama tira o começo da conversa sem avisar: as instruções e as ferramentas vão embora no meio do
+  trabalho. Quando uma resposta de um servidor local, sem chave, soma 2048 tokens ou mais, o Kli pergunta uma vez ao
+  `/api/ps` com que janela o modelo está carregado; se a conversa chegou a ela, a tela avisa uma vez (`the
+  conversation (6464 tokens) reached the 4096 the server keeps for qwen3:14b…`), e numa stack o aviso vai na linha do
+  nó e no rastro. Para dar mais: `OLLAMA_CONTEXT_LENGTH` no serviço do Ollama, ou um modelo com `PARAMETER num_ctx`
+  (`FROM qwen3:14b` e `PARAMETER num_ctx 16384` num Modelfile, e `ollama create qwen3:14b-16k -f Modelfile`). No
+  llama.cpp a janela é o `-c` do `llama-server`, dividida pelo `--parallel`. (23/11/2026: o qwen3 14B entrou com 3063
+  tokens, pensou mais 3401, perdeu as ferramentas e descreveu a correção em vez de fazê-la.)
 - **Enter no campo Modelo** lista o que o local ou provedor oferece: `/v1/models` (com tamanho e quantização no Ollama
   e no llama.cpp; num cluster exo, só os modelos carregados, com as máquinas em que cada um roda, porque o
   `/v1/models` do exo traz o catálogo inteiro), os Gemini e os modelos de parceiros prontos para chamar (os `-maas`: DeepSeek, GLM, gpt-oss,
@@ -204,7 +214,18 @@ um comando e devolve a saída e o código de saída), **BashOutput** e **KillBas
 segundo plano). O modelo só pede; quem executa é o Kli, nesta máquina, mesmo quando o modelo está em outra. O laço: o Kli manda a conversa e a lista de ferramentas, o modelo
 pede uma ou mais, o Kli executa e devolve os resultados, e isso se repete até o modelo responder só com texto, sem
 teto de passos nem de tempo: só o Esc para. Ao parar, cada pedido de ferramenta ainda sem resposta recebe um "not
-run", e a pergunta sai da conversa, para a próxima começar limpa em qualquer provedor. O modelo é orientado a usar ferramentas só quando o pedido é sobre os arquivos da pasta ou
+run", e a pergunta sai da conversa, para a próxima começar limpa em qualquer provedor. Um modelo local que escreve o
+pedido como texto em vez de pedir (`{"name": "Bash", "arguments": {…}}` como a resposta inteira; cada pedido entre
+`<tool_call>` e `</tool_call>`; ou cada um num bloco ```` ``` ````, quando todo bloco da resposta é um pedido) tem o
+pedido atendido como se tivesse pedido, o texto em volta fica como texto, e a tela avisa uma vez
+(`the model wrote its tool calls as text`). Só vale com o nome de uma ferramenta oferecida e nada além do nome e dos
+argumentos; qualquer outro texto é resposta, e um bloco de código ao lado de um pedido deixa tudo como resposta.
+(23/11/2026: o qwen2.5-coder 14B no Ollama respondia assim, e o nó acabava no primeiro passo, sem ter rodado nada;
+depois, explicava a correção e punha o `Edit` num bloco ```` ```json ````.) Um `Edit` cujo trecho só difere do
+arquivo nos espaços (a indentação, espaços entre palavras) não é aplicado, como antes, mas o erro traz as linhas do
+arquivo exatamente como estão, entre `<<<` e `>>>`, para o modelo copiar; se há mais de um lugar assim, o erro é o de
+sempre. (23/11/2026: o gpt-oss 20B lia `    15\t  return`, tomava o recuo do número pelo do código, mandava quatro
+espaços onde o arquivo tinha dois, e repetiu o mesmo `Edit` doze vezes.) O modelo é orientado a usar ferramentas só quando o pedido é sobre os arquivos da pasta ou
 precisa de um comando, e a escrever textos (um resumo, uma carta) direto na resposta. Cada ferramenta aparece na conversa (`● Write(soma.py)` e `⎿ Wrote 16 lines to soma.py`, com a
 diferença) e vai para o rastro.
 
@@ -570,7 +591,13 @@ lado a lado**, para comparar modelos e as ferramentas que eles chamam.
     (os nós rodam juntos e não há a quem perguntar). Comandos: os que só leem, e os comandos do projeto (os testes,
     o typecheck; cada um libera os que começam como ele: `bun run test` libera `bun run test x`); qualquer outro é
     recusado, o nó é avisado, e a linha dele conta as recusas (`9 tools (2 failed, 1 refused)`): uma resposta sem os
-    testes pode ser uma recusa, não preguiça do modelo. Um CLI (Claude Code, OpenCode) roda como agente onde o nó
+    testes pode ser uma recusa, não preguiça do modelo. A recusa repete o que roda ali e diz com que comando os
+    testes rodam (`the project's tests run with npm test`), e a nota do nó diz o mesmo desde o começo. Do
+    `package.json` vale também o comando que o script roda, se for um comando simples: com `"test": "bun test"`, o
+    `bun test test/a.test.ts` passa como o `npm test` passaria. Não vale um script com `&&`, `;`, `|`, `$`, aspas ou
+    redirecionamento, nem um que remove ou roda outros programas (`rm`, `sh`, `NOME=valor`…), nem um runtime sozinho
+    (`node`, `bun`, `npx`): esses ficam atrás do nome do script. (23/11/2026: um modelo de 7B pediu `bun test` quatro
+    vezes onde só o `npm test` rodava, os mesmos testes, e desistiu pedindo que a pessoa rodasse.) Um CLI (Claude Code, OpenCode) roda como agente onde o nó
     trabalha, com as permissões dele. Um CLI de outra máquina roda isolado e não grava.
   - **Sem limite num nó.** Nenhum nó tem tempo-limite nem teto de passos, pelo laço do Kli (o Gemini, um modelo
     local) ou por um CLI: ele trabalha até o modelo responder, ou até você apertar Esc, que para todos os nós
@@ -614,9 +641,9 @@ lado a lado**, para comparar modelos e as ferramentas que eles chamam.
 
        | Arquivo | Checagem (e comandos liberados) |
        |---|---|
-       | `bun.lock` | o script `test` (`bun run test`), ou `bun test` se houver arquivos de teste; mais `typecheck` e `lint` |
-       | `pnpm-lock.yaml`, `yarn.lock` | o script `test`; mais `typecheck` e `lint` |
-       | `package-lock.json` (ou só `package.json`) | `npm test`, se o script não for o vazio do `npm init`; mais `typecheck` e `lint` |
+       | `bun.lock` | o script `test` (`bun run test`), ou `bun test` se houver arquivos de teste; mais `typecheck` e `lint`; de cada script, também o comando que ele roda, se for simples |
+       | `pnpm-lock.yaml`, `yarn.lock` | o script `test`; mais `typecheck` e `lint`; de cada script, também o comando que ele roda, se for simples |
+       | `package-lock.json` (ou só `package.json`) | `npm test`, se o script não for o vazio do `npm init`; mais `typecheck` e `lint`; de cada script, também o comando que ele roda, se for simples |
        | `go.mod` | `go test ./...` (`go vet`, `go build`) |
        | `Cargo.toml` | `cargo test` (`cargo check`, `cargo build`) |
        | `*.sln`, `*.slnx`, `*.csproj` | `dotnet test`, se houver um projeto de testes, senão `dotnet build` (`dotnet test`, `dotnet build`) |

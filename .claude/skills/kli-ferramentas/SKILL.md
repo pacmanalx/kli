@@ -26,7 +26,7 @@ O nome, os parâmetros e o resumo seguem o Claude Code:
 | **Glob** | arquivos e pastas (pastas com `/` no fim), sem `node_modules` nem `.git`; resumo `Found 2 files and 1 folder` |
 | **Grep** | usa o `rg` |
 | **Write** | um arquivo que já existe só é gravado depois de lido na sessão |
-| **Edit** | o `old_string` aparece uma vez só, ou é preciso `replace_all`; também exige leitura antes |
+| **Edit** | o `old_string` aparece uma vez só, ou é preciso `replace_all`; também exige leitura antes. Nunca aplica um trecho aproximado: se só os espaços diferem e há um lugar só assim, o erro traz as linhas exatas (`sameButSpaces`) |
 | **Bash** | `bash -c` na pasta; limite de 120 s, até 600 s se o modelo pedir; saída ao vivo |
 | **BashOutput** e **KillBash** | o que é novo de um comando em segundo plano (`b1`), e parar esse comando |
 
@@ -59,6 +59,10 @@ Ferramenta nova entra em `TOOL_SPECS` e no `run`, com resumo, teste em `test/too
   **plan** (só as ferramentas de leitura e o Bash que só lê; o resto é recusado também na execução).
 - **`kli -p`:** não tem a quem perguntar, então o que precisa de permissão é recusado.
   `--permission-mode acceptEdits` libera as edições.
+- **Nó que grava numa stack:** os comandos que só leem e os do projeto (`core/project.ts`). Do `package.json`, o
+  script e o comando que ele roda, se for simples (`"test": "bun test"` libera `npm test` e `bun test`); nunca um
+  corpo com `&&`, `$`, aspas ou redirecionamento, um do `EXACT`, um `NOME=valor` nem um runtime sozinho (`node`,
+  `bun`, `npx`). A recusa e a nota do nó dizem o que roda e com que comando os testes rodam.
 - **Para pôr um comando na lista dos que só leem:** ele precisa de fato só ler. As opções que gravam ou rodam código
   vão em `UNSAFE` (`find -exec`, `sort -o`, `rg --pre`...). O teste entra nos dois sentidos em
   `test/shell.test.ts`.

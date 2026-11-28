@@ -70,7 +70,7 @@ function groundProblems(where: string, n: StackNode): string[] {
 }
 
 /** A command of words: letters, digits and the signs a path or a flag uses. */
-const PLAIN_COMMAND = /^[\w@%+=:,.\/-]+( [\w@%+=:,.\/-]+)*$/;
+export const PLAIN_COMMAND = /^[\w@%+=:,.\/-]+( [\w@%+=:,.\/-]+)*$/;
 
 /** What is wrong with the settings of the nodes that write: commands are text, and each one in `run` is one command. */
 export function writeProblems(where: string, write: StackConfig["write"]): string[] {

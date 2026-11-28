@@ -93,6 +93,8 @@ export interface NodeResult {
   /** `refused`: it needed a permission no one in a stack gives (a command the node may not run, a file outside). */
   tools: { name: string; label: string; ok: boolean; refused?: boolean }[];
   error?: string;
+  /** What its provider said along the way: the context the server keeps was reached, calls written as text… */
+  notice?: string;
   /** An aggregator's: how much of its answer came from each node it got (shares adding up to 100). */
   contributions?: Record<string, number>;
   /** A verifier's: the request's requirements and how each node it judged meets them. */
@@ -244,12 +246,15 @@ export class StackRunner {
   }
 
   /** A node's conversation; one that writes works in the folder inside its copy, with the project's commands. */
-  private session(id: string, node: StackNode, copy?: { root: string; run: string[]; fence?: Fence; inFolder: boolean }): Session {
+  private session(id: string, node: StackNode, copy?: { root: string; run: string[]; check?: string; fence?: Fence; inFolder: boolean }): Session {
     let s = this.sessions.get(id);
     if (s) return s;
     let workspace: Workspace | undefined;
     const tools = toolsOf(node);
     const run = copy?.run ?? [];
+    // the project's check said by name, in the note and in each refusal: a small model refused `bun test` kept asking
+    // for it instead of the `npm test` that ran the same tests (23/11/2026)
+    const commands = `the ones that only read${run.length ? `, and the ones that start with ${run.join(", ")}` : ""}${copy?.check ? `; the project's tests run with ${copy.check}` : ""}`;
     if (this.options.root && (tools === "read" || (tools === "write" && copy))) {
       workspace = new Workspace(copy?.root ?? this.options.root);
       // nodes run side by side and never ask: to read, plan mode; to write, any edit inside its own copy, and only
@@ -258,7 +263,7 @@ export class StackRunner {
       if (tools === "write") {
         workspace.rules.push(...allowedRules(run));
         workspace.fence = copy?.fence;
-        workspace.alone = `no one is asked in a stack's step: only the commands that read run here${run.length ? `, and the ones that start with ${run.join(", ")}` : ""}`;
+        workspace.alone = `no one is asked in a stack's step. The commands that run here: ${commands}`;
       }
       this.workspaces.push(workspace);
     }
@@ -266,7 +271,7 @@ export class StackRunner {
     const note = !workspace
       ? undefined
       : tools === "write"
-        ? `${copy?.inFolder ? "In this step you work in the person's own folder: make the changes the request needs to the files (Write, Edit); they are the project's files, and the person sees what you changed." : "In this step you work in a copy of the project that is only yours: make the changes the request needs to the files (Write, Edit). The person sees what you changed and chooses which changes to apply."} Commands: the ones that only read${run.length ? `, and the ones that start with ${run.join(", ")}` : ""}; any other is refused, and so is changing files outside the ${copy?.inFolder ? "folder" : "copy"}.\n\n${pace()}`
+        ? `${copy?.inFolder ? "In this step you work in the person's own folder: make the changes the request needs to the files (Write, Edit); they are the project's files, and the person sees what you changed." : "In this step you work in a copy of the project that is only yours: make the changes the request needs to the files (Write, Edit). The person sees what you changed and chooses which changes to apply."} Commands: ${commands}. Any other is refused, and so is changing files outside the ${copy?.inFolder ? "folder" : "copy"}.\n\n${pace()}`
         : "In this step your tools only read: you cannot create or change files or run commands that change anything. Give your whole answer in your reply.";
     // the config's instructions are for answering the person (who Kli is, how it talks): a node that judges or chooses
     // answers Kli, and took them for requirements of the request
@@ -328,6 +333,7 @@ export class StackRunner {
       ...(r.outputTokens !== undefined && { outputTokens: r.outputTokens }),
       ...(r.costUsd !== undefined && { costUsd: r.costUsd }),
       ...(r.error && { error: r.error }),
+      ...(r.notice && { notice: r.notice }),
       ...(r.contributions && { contributions: r.contributions }),
       ...(r.verdict && { verdict: { requirements: r.verdict.requirements, judged: r.verdict.judged.map(({ node, adherence, items }) => ({ node, adherence, items })) } }),
       ...(r.rounds && { rounds: r.rounds }),
@@ -437,7 +443,7 @@ export class StackRunner {
       onEvent?.({ type: "delta", node: id, text: t });
     };
     try {
-      const session = this.session(id, node, copy && { root: copy.root, run: commands?.run ?? [], ...(fence instanceof Fence && { fence }), inFolder: copy instanceof Here });
+      const session = this.session(id, node, copy && { root: copy.root, run: commands?.run ?? [], ...(commands?.check && { check: commands.check }), ...(fence instanceof Fence && { fence }), inFolder: copy instanceof Here });
       // in full ("vertex" is vertex/google/gemini-…), so a fallback shows as another name
       model = session.use(node.model!);
       const options = {
@@ -507,6 +513,7 @@ export class StackRunner {
         }),
         ...(r.thinkingTokens && { thinkingTokens: r.thinkingTokens }),
         ...(r.costUsd !== undefined && { costUsd: r.costUsd }),
+        ...(r.notice && { notice: r.notice }),
       });
     } catch (e) {
       const ms = Math.round(performance.now() - started);
